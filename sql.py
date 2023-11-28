@@ -34,7 +34,7 @@ def add_users_field(user_id,username,chat_id):
             'INSERT INTO users (user_id, username, keywords,premium, blocklist, keywords_limit,play,chat_id,purchase_date,expiration_date) VALUES (?, ?, ?, ?, ?,?,?,?,?,?)',
             (user_id, username,'[]', 0, '[]',1,1,chat_id,0,0))
         conn.commit()
-        conn.close()
+
         return 'new added'
 
     else:
@@ -46,12 +46,12 @@ def get_blocked_users(user_id:int,action:str):
     cursor = conn.cursor()
     cursor.execute('SELECT blocklist FROM users WHERE user_id = ?', (user_id,))
     result = cursor.fetchone()
-    # print('get_blocked_users=',result)
+    print('get_blocked_users=',result)
     if result is not None:
         print(1,'Длина',len(result[0]))
         if action =='len':
             blocklist = json.loads(result[0])
-            if result=={}:
+            if blocklist=={}:
                 return len(result[0])
         elif action =='dict' and len(result[0])!=0 :
             blocklist = json.loads(result[0])
@@ -62,6 +62,7 @@ def get_blocked_users(user_id:int,action:str):
         return None
     elif result == None:
         return None
+# print(get_blocked_users(704718950,'dict'))
 
 #добавить забаненого в список забаненых
 def add_delete_get_clear_blocked_users(block_id:int=0,block_name:str=None, user_id:int=0,action:str='getall'):
@@ -85,13 +86,14 @@ def add_delete_get_clear_blocked_users(block_id:int=0,block_name:str=None, user_
             print(4)
             # Преобразование строки JSON в объект Python (в данном случае, в список)
             blocklist.pop(str(block_id))
-            blocklist = json.dumps(blocklist)
+            print(blocklist)
+            blocklist = json.dumps(blocklist,ensure_ascii=False)
             cursor.execute('UPDATE users SET blocklist = ? WHERE user_id = ?', (blocklist, user_id))
             conn.commit()
             #'user has been unbanned'
             return 2
         elif action=='getall':
-            print(blocklist)
+            # print(blocklist)
 
             blocklist_tuple=tuple( (int(id[0]),str(id[1])) for id in blocklist.items())
             print(blocklist_tuple)
@@ -103,6 +105,14 @@ def add_delete_get_clear_blocked_users(block_id:int=0,block_name:str=None, user_
             conn.commit()
             #3 'blocklist has been cleared'
             return 3
+    else:
+        return 0
+
+
+
+
+
+
 
 
 # утилита для создания поля
@@ -126,11 +136,12 @@ def get_users_and_keywords():
 # get_users_and_keywords()
 # добавить слово для пользователя в формате списка для каждого пользователя соответственоо
 
-def add_delete_keyword(user_id,keyword,action:str):
+def add_delete_keyword(user_id:int,keyword=None,action:str=None):
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT keywords,keywords_limit,premium FROM users WHERE user_id = ?', (user_id,))
     result=cursor.fetchone()
+    print(result)
     if action=='add':
         if len(result)>0:
             keywords = json.loads(result[0])
@@ -153,23 +164,30 @@ def add_delete_keyword(user_id,keyword,action:str):
                     return 'added'
                 elif len(keywords) == keywords_limit :
                     return 'limit_increase'
-    elif action=='del':
-        keywords = list(json.loads(result[0]))
-        if keyword in keywords:
-                keywords.remove(keyword)
-        else:
-            return 'word not there exists '
-        keywords = json.dumps(keywords)
-        cursor.execute('UPDATE users SET keywords = ? WHERE user_id = ?', (keywords, user_id))
-        conn.commit()
-        return 'word was deleted'
-    elif action == 'clear_list_keywords':
+    # elif action=='del':
+    #     keywords = list(json.loads(result[0]))
+    #     if keyword in keywords:
+    #             keywords.remove(keyword)
+    #     else:
+    #         return 'word not there exists '
+    #     keywords = json.dumps(keywords)
+    #     cursor.execute('UPDATE users SET keywords = ? WHERE user_id = ?', (keywords, user_id))
+    #     conn.commit()
+    #     return 'word was deleted'
+    elif action == 'clear_list':
+        print('clear')
         keywords=[]
         keywords = json.dumps(keywords)
         cursor.execute('UPDATE users SET keywords = ? WHERE user_id = ?', (keywords, user_id))
         conn.commit()
+        print('keywords_cleear')
         return 'keywords_clear'
 # print( add_delete_keyword(keyword=f'iphone {16}',user_id=704718950,action='add'))
+
+
+
+
+
 # функция для просмотра юзером сколько осталось времени действия подписки подписки
 def premium_alive_period(user_id:int,action:str):
     # Подключение к базе данных SQLite
@@ -250,3 +268,96 @@ def controling_premium(user_id:int,new_premium_status:bool):
             return 4
 # print( controling_premium(user_id=704718950,new_premium_status=True))
 
+
+
+
+
+def getchangeplaystatus(user_id=None,action=None):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT play FROM users WHERE user_id = ?', (user_id,))
+    result = cursor.fetchone()
+    if action=='get' or action is None :
+        return result[0]
+    elif action == 1 and result[0]==0:
+        cursor.execute('UPDATE users SET play = ?WHERE user_id = ?',
+                       (1, user_id))
+        conn.commit()
+        return 1
+    elif action == 0 and  result[0]==1 :
+        cursor.execute('UPDATE users SET play = ?WHERE user_id = ?',
+                       (0 ,user_id))
+        conn.commit()
+        return 0
+
+# print(getchangeplaystatus(704718950,1))
+
+
+
+
+
+
+
+
+def get_user_and_keywords(user_id,checking=None):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT keywords FROM users WHERE user_id = ?', (user_id,))
+    result = cursor.fetchone()
+    if len(result) >0:
+        if checking is None :
+            result=json.loads(result[0])
+            return result
+        else:
+            userid_and_keyword=(user_id,json.loads(result[0]))
+            return tuple(userid_and_keyword)
+    else:
+        if checking is None :
+            result=json.loads(result[0])
+            return result
+        else:
+            return tuple()
+
+
+
+
+print(get_user_and_keywords(704718950,True))
+def prem_status(user_id):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT premium FROM users WHERE user_id = ?', (user_id,))
+    result = cursor.fetchone()
+    if result[0]==1:
+        return 1
+    else:
+        return 0
+
+# print(prem_status(704718950))
+
+# print(getfreepremium())
+def get_users_without_sendusermsg_in_blocklist(block_id:int):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+
+    query = "SELECT user_id FROM users WHERE NOT blocklist LIKE ?"
+    cursor.execute(query, ('%' + str(block_id) + '%',))
+    result = cursor.fetchall()
+    print(result)
+
+
+    return tuple(user_id[0] for user_id in result)
+
+    # Пример использования функции
+
+
+# print(get_users_without_sendusermsg_in_blocklist('1'))
+#
+
+
+russiandict={
+   "про": "pro",
+"макс":"max",
+    'мини':'mini',
+    "плюс":"plus",
+    "айфон":"iphone",
+}
