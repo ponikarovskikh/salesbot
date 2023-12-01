@@ -19,7 +19,7 @@ from keyboards import *
 from requests.exceptions import ReadTimeout
 from Text_of_messages import *
 
-bot = telebot.TeleBot(token=config.token,)
+bot = telebot.TeleBot(token=config.token)
 
 
 
@@ -32,7 +32,7 @@ bot = telebot.TeleBot(token=config.token,)
 
 @bot.message_handler(commands=['start'])
 def welcome(msg:Message):
-        if msg.chat.type=='group':
+        if  'group' in msg.chat.type:
             pass
         else:
             username = msg.from_user.username
@@ -220,31 +220,44 @@ def messagecheck(msg:Message):
             else:
                  bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
         if msg.chat.type=='supergroup' :
-            print(msg)
+            # print(msg)
 
-            message_correct=msg.text.lower()
-            print(message_correct)
+            Text = msg.text
+            sender_id = msg.from_user.id
+            sender_id = 0
+            sender_username = 0
+            crdtl = 'None'
+            if ("_@_set") in Text:
+                crdtl = Text[Text.index('set_@_'):Text.index('_@_set') + 6]
+                Text = Text[Text.index('_@_set') + 6:]
+                # crdtl = crdtl.split('_@_')
+                crdtl = crdtl.split('_@_')
+                sender_id = crdtl[1]
+                sender_username = crdtl[2]
+
+            message_correct=Text.lower()
+            # print(message_correct)
             message_correct=message_correct.split(' ')
-            print(message_correct)
+            # print(message_correct)
             for item in message_correct:
                 if item in russiandict.keys():
-                    print('yes',item)
+                    # print('yes',item)
                     message_correct.insert(message_correct.index(item),russiandict[item])
                     message_correct.remove(item)
             message_correct=' '.join(message_correct)
-            print(message_correct)
+            # print(message_correct)
             users_and_keywords=[]
             def users_and_keywords_list(access_sending:tuple,users_and_keywords:list):
                 for user_id in  access_sending:
-                    print(user_id)
+                    # print(user_id)
                     users_and_keywords.append(get_user_and_keywords(user_id,checking=True))
                 # print(users_and_keywords)
                 return tuple(users_and_keywords)
 
-                # return users_and_keywords
 
-            access_sending = get_users_without_sendusermsg_in_blocklist(msg.from_user.id)
-            print(access_sending)
+
+            access_sending = get_users_without_sendusermsg_in_blocklist(sender_id)
+            # print(access_sending)
             checkinglist = users_and_keywords_list(access_sending,users_and_keywords)
             for user_keys in checkinglist:
 
@@ -254,26 +267,34 @@ def messagecheck(msg:Message):
                 # print(keywords_check)
 
                 for kwrd in keywords_check:
-                    need_send=[]
+                    need_send=0
+                    not_need=0
                     for key in kwrd:
                         if str(key).lower() in  message_correct.lower():
 
-                            need_send.append(1)
+                            need_send+=1
                         else:
-                            need_send.append(0)
+                            not_need+=1
                     print(need_send,message_correct,user_id_to)
-                    if 0 not in need_send:
-                        if user_id_to!=msg.from_user.id:
+                    print(need_send,not_need,sender_id,user_id_to)
+                    if sender_username == 0 and sender_id == 0:
+                        sender_username = msg.from_user.username
+                        sender_id = msg.from_user.id
+                    if need_send>=3:
+                        # if user_id_to!=int(sender_id):
                             if getchangeplaystatus(user_id_to,action='get')!=0:
-                                sender_username = msg.from_user.username
-                                sender_user_id=msg.from_user.id
-                                text = msg.text
+
+                                print("sender_username:",sender_username,"      sender_id",sender_id,'  user_id_to',
+                                      user_id_to)
+
                                 link_text = f"[{sender_username}](https://t.me/{sender_username})\n\n" \
-                                        f"{text}"
-                                bot.send_message(user_id_to, link_text, parse_mode='Markdown', disable_web_page_preview=True,reply_markup=block_keyboard(sender_user_id,sender_username,banlist=None))
-                                need_send.clear()
+                                            f"{Text}"
+                                bot.send_message(user_id_to, link_text, parse_mode='Markdown', disable_web_page_preview=True,reply_markup=block_keyboard(sender_id,sender_username,banlist=None))
+                                break
+                                pass
                     else:
-                        need_send.clear()
+                        need_send = 0
+                        not_need = 0
 
 
 

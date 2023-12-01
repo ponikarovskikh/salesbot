@@ -3,6 +3,23 @@ from telebot.types import *
 from telebot.util import quick_markup
 from sql import *
 
+
+def example_kb():
+
+
+
+            inline_keyboard = telebot.types.InlineKeyboardMarkup()
+            url_button = telebot.types.InlineKeyboardButton(text="Visit ", url="https://t.me/704718950")
+            inline_keyboard.add(url_button)
+
+            return inline_keyboard
+
+
+
+
+
+
+
 def menu_keyboard_1stage():
     keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True,one_time_keyboard=True)
     play_button = types.KeyboardButton('Продавать товар')

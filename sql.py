@@ -342,7 +342,7 @@ def get_users_without_sendusermsg_in_blocklist(block_id:int):
     query = "SELECT user_id FROM users WHERE NOT blocklist LIKE ?"
     cursor.execute(query, ('%' + str(block_id) + '%',))
     result = cursor.fetchall()
-    print(result)
+    # print(result)
 
 
     return tuple(user_id[0] for user_id in result)
@@ -356,8 +356,12 @@ def get_users_without_sendusermsg_in_blocklist(block_id:int):
 
 russiandict={
    "про": "pro",
-"макс":"max",
+    "макс":"max",
     'мини':'mini',
     "плюс":"plus",
     "айфон":"iphone",
+    "натурал":"natural",
+    "вайт":"white",
+    "блэк":"black",
+    "грин":"green"
 }
