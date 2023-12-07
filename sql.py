@@ -31,8 +31,9 @@ def add_users_field(user_id,username,chat_id):
     if existing_user is None:
         # Если пользователя нет в базе данных, добавляем его
         cursor.execute(
-            'INSERT INTO users (user_id, username, keywords,premium, blocklist, keywords_limit,play,chat_id,purchase_date,expiration_date) VALUES (?, ?, ?, ?, ?,?,?,?,?,?)',
-            (user_id, username,'[]', 0, '[]',1,1,chat_id,0,0))
+            'INSERT INTO users (user_id, username, keywords,premium, blocklist, keywords_limit,play,chat_id,'
+            'purchase_date,expiration_date,choosed_items) VALUES (?,?, ?, ?, ?, ?,?,?,?,?,?)',
+            (user_id, username,'[]', 0, '[]',1,1,chat_id,0,0,"{}"))
         conn.commit()
 
         return 'new added'
@@ -186,6 +187,60 @@ def add_delete_keyword(user_id:int,keyword=None,action:str=None):
 
 
 
+# скрипт внесения инфы какие товары выбрал пользоват ченрез клаву и что сейчас ищет также можно удалить
+
+def get_add_del_choosed_item(user_id=None,action=None,item=None):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT choosed_items FROM users WHERE user_id = ?', (user_id,))
+    result = cursor.fetchone()
+    # print(result)
+    if action=='get':
+        if len(result) > 0:
+            choosed_items = json.loads(result[0])
+            return choosed_items
+            # print(choosed_items,type(choosed_items))
+    elif action=='add':
+        if len(result) > 0:
+            choosed_items = json.loads(result[0])
+            # print(choosed_items,type(choosed_items))
+
+            control_items=tuple (item.items())[0]
+            # print(control_items)
+            choosed_items[control_items[0]]=control_items[1]
+            # print(choosed_items.keys())
+            choosed_items = json.dumps(choosed_items)
+            # print(choosed_items)
+            cursor.execute('UPDATE users SET choosed_items = ? WHERE user_id = ?', (choosed_items, user_id))
+            conn.commit()
+            return 'added'
+    elif action=='del':
+        if len(result) > 0:
+            choosed_items = json.loads(result[0])
+            # print(choosed_items,type(choosed_items))
+            # control_items=tuple (item.items())[0]
+            # print(control_items)
+            choosed_items.pop(item)
+            choosed_items = json.dumps(choosed_items)
+            # print(choosed_items)
+            cursor.execute('UPDATE users SET choosed_items = ? WHERE user_id = ?', (choosed_items, user_id))
+            conn.commit()
+            return 'deleted'
+
+
+
+# print(get_add_del_choosed_item(704718950,'get',{"iphone_12_pro":["iphone","14","pro"]}))
+
+
+
+
+
+
+
+
+
+
+
 
 
 # функция для просмотра юзером сколько осталось времени действия подписки подписки
@@ -299,6 +354,7 @@ def getchangeplaystatus(user_id=None,action=None):
 
 
 
+
 def get_user_and_keywords(user_id,checking=None):
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
@@ -321,17 +377,17 @@ def get_user_and_keywords(user_id,checking=None):
 
 
 
-print(get_user_and_keywords(704718950,True))
+# print(get_user_and_keywords(704718950,True))
 def prem_status(user_id):
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT premium FROM users WHERE user_id = ?', (user_id,))
     result = cursor.fetchone()
     if result[0]==1:
-        return 1
+        return True
     else:
-        return 0
-
+        return False
+# 1111 1111 1111 1026 12 22 000
 # print(prem_status(704718950))
 
 # print(getfreepremium())
@@ -364,4 +420,5 @@ russiandict={
     "вайт":"white",
     "блэк":"black",
     "грин":"green"
+
 }

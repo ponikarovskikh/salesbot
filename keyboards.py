@@ -147,7 +147,7 @@ def unblock_keyboard(block_id,block_name,banlist=None):
 
 
 def banlistmarkup(user_id,blocklist):
-    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup = types.InlineKeyboardMarkup(row_width=3)
     blocklist=get_blocked_users(user_id,'dict')
 
     for items in blocklist.items():
@@ -163,26 +163,46 @@ def banlistmarkup(user_id,blocklist):
 # reply_markup=choosing_keyboard_proccess(callback.message.chat.id,'year',callback.data,{f'{product_name}':f'✅'}))
 # choosing_keyboard_proccess(callback.message.chat.id, 'model', callback.data, {f'{product_name}': f'✅',f"{product_year}":"✅"}))
 def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,product_choosen:dict()=None):
-    with open('IPHONE_LIST.json','r')as f :
+    with open('IPHONE_LIST.json','r') as f :
         productlist=json.load(f)
-        print(productlist)
-    markup = types.InlineKeyboardMarkup(row_width=6)
+        # print(productlist)
+    markup = types.InlineKeyboardMarkup(row_width=3)
+
     if level=='product':
-        buttons=[]
-        for product in productlist.keys():
-            print(product)
-            button_text = f'{product}'
-            callback_data = f'construct_{product.lower()}_stepyear'
-            buttons.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
-        markup.add(*buttons)
-        return markup
+            buttons=[]
+            for product in productlist.keys():
+                if product in kybmark.keys():
+                    button_text = f'{kybmark[product]}{product}'
+                callback_data = f'construct_{product.lower()}_stepyear'
+                buttons.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
+            markup.add(*buttons)
+            return markup
     elif level=='year':
+        new_clbck = construct[:-9]
+        product_choice = new_clbck.split('_')[1]
+        years = productlist[product_choice]
+
 
         markup = types.InlineKeyboardMarkup(row_width=6)
+        buttonsmenuprod=[]
+        for product in productlist.keys():
+            if product in kybmark.keys():
+                if product==product_choice:
+                    button_text = f'🔽{kybmark[product]}{product}'
 
-        new_clbck=construct[:-9]
-        product_choice=new_clbck.split('_')[1]
-        years=productlist[product_choice]
+                else:
+                    button_text = f'{kybmark[product]}{product}'
+            callback_data = f'construct_{product.lower()}_stepyear'
+            buttonsmenuprod.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
+        markup.add(*buttonsmenuprod)
+
+
+
+
+
+
+
+
         buttons = []
         for year in years.keys():
             button_text = f'{year}'
@@ -190,39 +210,96 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
             buttons.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
         markup.add(*buttons)
         return markup
+
     elif level=='memory':
+        choosed_items=get_add_del_choosed_item(user_id,'get')
+        choosed_items=tuple(choosed_items.keys())
+        print('chosed',choosed_items)
         print('memo')
         markup = types.InlineKeyboardMarkup(row_width=3)
+        # print(construct)
+        if construct is not None:
+            new_clbck = construct[:-11]
+            product_choice=new_clbck.split('_')[1]
 
-        new_clbck = construct[:-11]
-        product_choice=new_clbck.split('_')[1]
-        year_choice=new_clbck.split('_')[2]
-        models = productlist[product_choice][year_choice]
-        buttons=[]
+            year_choice=new_clbck.split('_')[2]
+            years = productlist[product_choice]
+            models = productlist[product_choice][year_choice]
+            print(year_choice)
+            print(product_choice)
+        else:
+            product_choice='iphone'
+            year_choice='2023'
+            years = productlist[product_choice]
+            models = productlist[product_choice][year_choice]
+
+        buttonsmenuprod = []
+        for product in productlist.keys():
+                if product in kybmark.keys():
+                    if product == product_choice:
+                        button_text = f'🔽{kybmark[product]}{product}'
+
+                    else:
+                        button_text = f'{kybmark[product]}{product}'
+                callback_data = f'construct_{product.lower()}_stepyear'
+                buttonsmenuprod.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
+        markup.add(*buttonsmenuprod,row_width=len(buttonsmenuprod))
+
+        buttonsmenuyear = []
+        for year in years.keys():
+                if year==year_choice:
+                    button_text = f'🔽{year}'
+
+                else:
+                    button_text = f'{year}'
+                callback_data = f'construct_{product_choice}_{year.lower()}_stepmemory'
+                buttonsmenuyear.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
+        markup.add(*buttonsmenuyear,row_width=len(buttonsmenuyear))
+        print(*buttonsmenuyear)
+        buttonsmenumodel=[]
 
         for model in models.keys():
-            specs=models[model]
-            print(specs)
-            for spec in specs.keys():
-                colors=specs[spec]
-                print(colors)
-                for color in colors.keys():
-                    memories=colors[color]
-                    print(memories)
+                specs=models[model]
 
-                    for memory in memories:
-                        if model in kybmark.keys():
-                            button_text = f'{kybmark[model]}{kybmark[spec]}{kybmark[color]}{memory}'
-                        else:
-                            button_text = f'{model}{kybmark[spec]}{kybmark[color]}{memory}'
+                for spec in specs.keys():
+                    colors=specs[spec]
+                    # print(colors)
+                    for color in colors.keys():
+                        memories=colors[color]
+                        # print(memories)
+                        pos_len=len(memories)
+                        for memory in memories :
 
-                        print('button_text',button_text)
-                        callback_data = (f'construct_{product_choice}_{year_choice}_{model}_{spec}_{color}_'
-                                         f'{memory}_choosen')
-                        print('callback_data', callback_data)
-                        buttons.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
-        markup.add(*buttons)
-                        # print(buttons)
+                            callback_data = (f'construct_{product_choice}_{year_choice}_{model}_{spec}_{color}_'
+                                             f'{memory}_add')
+
+
+                            if model in kybmark.keys():
+                                button_text = f'{kybmark[model]}{kybmark[spec]}{kybmark[color]}{memory}'
+                            else:
+                                button_text = f'{model}{kybmark[spec]}{kybmark[color]}{memory}'
+
+                            for choosed in choosed_items:
+                                if choosed in callback_data:
+                                    print(choosed,'---',callback_data)
+                                    callback_data = (f'construct_{product_choice}_{year_choice}_{model}_{spec}_{color}_'
+                                                         f'{memory}_delete')
+                                    if model in kybmark.keys():
+                                        button_text = f'✅{kybmark[model]}{kybmark[spec]}{kybmark[color]}{memory}'
+                                    else:
+                                        button_text = f'✅{model}{kybmark[spec]}{kybmark[color]}{memory}'
+
+
+
+
+
+                            # kbid=f'iph{id}'
+                            print('button_text',button_text)
+
+                            print('callback_data', callback_data)
+                            buttonsmenumodel.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
+        markup.add(*buttonsmenumodel)
+                            # print(buttons)
         return markup
 
 
@@ -247,7 +324,12 @@ kybmark = {
     "orig":'',
     'se':'SE',
     "mini":"Mini",
-    "xr":"XR"
+    "xr":"XR",
+    "ipad":"🌅",
+    "airpods":"🎧",
+    "watch":"⌚️",
+    "iphone":"📱",
+    "macbook":"💻"
 
 }
 

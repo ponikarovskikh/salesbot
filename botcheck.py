@@ -19,7 +19,7 @@ from keyboards import *
 from requests.exceptions import ReadTimeout
 from Text_of_messages import *
 
-bot = telebot.TeleBot(token=config.token)
+bot = telebot.TeleBot(token=config.token_GorbushkinService)
 
 
 
@@ -174,6 +174,30 @@ def block_list_clear(msg:Message):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     #-----------------------------------------------------------------------------------------------------------------
                             #ПРОВЕРКА ПОТОКА СООБЩЕНИЙ
     # чекать все смс из чатов
@@ -191,14 +215,25 @@ def messagecheck(msg:Message):
                 # bot.send_message(msg.chat.id,'Раздел Блок-лист в разработке')
                  block_list_show(msg)
             elif 'Выбрать товары'in msg.text:
-                print("yes")
+                # print("yes")
                 # bot.send_message(msg.chat.id,'Раздел Выбрать товары в разработке')
-                bot.send_message(msg.chat.id, 'Выберите следующие товары по которым вы хотите получать сообщения',reply_markup=choosing_keyboard_proccess(level='product'))
+                bot.send_message(msg.chat.id, 'Какие сообщения по товарам получать?',
+                                 reply_markup=choosing_keyboard_proccess(msg.chat.id,level='memory'))
             elif  'Premium-тариф' in msg.text:
                 if prem_status(msg.chat.id)==True:
                     bot.send_message(msg.chat.id,'Ваш Premium-тариф активен',reply_markup=menu_keyboard_2stage(msg.chat.id))
                 else:
-                    bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
+                    # bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
+                    bot.send_invoice(msg.chat.id, 'Premium-тариф', '⏬⏬Оплатить на 30 дней⏬⏬',f'buy_premium'
+                                                                                       f'_{msg.from_user.id}',
+                                     config.token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
+                            'Купить', 990 * 100)])
+
+
+
+
+
+
             elif 'FAQ' in msg.text:
                 bot.send_message(msg.chat.id, support_info, parse_mode='HTML',
                                  )
@@ -221,11 +256,13 @@ def messagecheck(msg:Message):
                  bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
         if msg.chat.type=='supergroup' :
             # print(msg)
+            #По тех причинам мы не в состоянии связаться с человеком если отсутствует никнейн добавляте себе его и мы
+            # обязатьно с вами свяжемся
+
 
             Text = msg.text
             sender_id = msg.from_user.id
-            sender_id = 0
-            sender_username = 0
+            sender_username = msg.from_user.username
             crdtl = 'None'
             if ("_@_set") in Text:
                 crdtl = Text[Text.index('set_@_'):Text.index('_@_set') + 6]
@@ -296,8 +333,24 @@ def messagecheck(msg:Message):
                         need_send = 0
                         not_need = 0
 
+# Модуль оплаты премиума
+
+@bot.pre_checkout_query_handler(func=lambda query: True)
+def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
+    print(pre_checkout_query)
+    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,error_message='Что-то не так')
 
 
+
+@bot.message_handler(content_types=['successful_payment'])
+def process_successful_payment(msg:Message):
+    # print('successful_payment')
+    print(msg)
+    # message=json.dumps(message,ensure_ascii=False)
+    if str(msg.from_user.id).lower() in  str(msg.successful_payment.invoice_payload):
+        if controling_premium(msg.from_user.id,new_premium_status=True) ==2:
+            bot.send_message(msg.chat.id, premium_purchase_ok,
+                            parse_mode='HTML')
 
 
 
@@ -307,7 +360,7 @@ def messagecheck(msg:Message):
     #логика кнопок
 @bot.callback_query_handler(func=lambda callback:callback.data)
 def callback_logic(callback):
-            print(callback.data)
+            # print(callback.data)
             # /логика бана
             if callback.data == 'banlist_show':
                     blocklist = add_delete_get_clear_blocked_users(user_id=callback.message.chat.id, action='getall')
@@ -419,59 +472,107 @@ def callback_logic(callback):
             elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepyear'):
                 product_name=callback.data.split('_')[1]
                 bot.edit_message_text(
-                    f'Товар <b>{product_name.capitalize()}</b> выбран✅\nТеперь укажите год вашей линейки снизу ',
+                    'Какие сообщения по товарам получать?',
                     callback.message.chat.id, callback.message.id,parse_mode="HTML",
                     reply_markup=choosing_keyboard_proccess(callback.message.chat.id,'year',callback.data,{f'{product_name}':f'✅'}))
 
 
             elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepmemory'):
-                product_name = callback.data.split('_')[1]
-                product_year = callback.data.split('_')[2]
+                # product_name = callback.data.split('_')[1]
+                # product_year = callback.data.split('_')[2]
 
                 bot.edit_message_text(
-                f'Товар: <b>{product_name.capitalize()}</b>✅\n' \
-                f'Год линейки: {product_year} ✅\n' \
-                f'Теперь укажите серию, цвет, память ⤵',
+                # f'Товар: <b>{product_name.capitalize()}</b>✅\n' \
+                # f'Год линейки: {product_year} ✅\n' \
+                # f'Теперь укажите серию, цвет, память ⤵',
+                    'Какие сообщения по товарам получать?',
                 callback.message.chat.id, callback.message.id, parse_mode = "HTML",
-                reply_markup = choosing_keyboard_proccess(callback.message.chat.id, 'memory', callback.data,
-                                                          {f'{product_name}': f'✅',f"{product_year}":"✅"}))
+                reply_markup = choosing_keyboard_proccess(callback.message.chat.id, 'memory', callback.data))
 
-            elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_choosen'):
-
+            elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_add'):
+                print(callback.data)
                 product_name = callback.data.split('_')[1]
                 product_year = callback.data.split('_')[2]
                 product_model=callback.data.split('_')[3]
+                print(product_name,product_year,product_model)
+
                 product_spec = callback.data.split('_')[4]
                 product_color=callback.data.split('_')[5]
                 product_memory = callback.data.split('_')[6]
 
+
+
+
+
+
                 if product_spec == 'orig':
-                            new_keyword = f'{product_name} {product_model} {product_color} {product_memory}'
-                else:
-                            new_keyword = f'{product_name} {product_model} {product_spec} {product_color} {product_memory}'
-                new_keyword=new_keyword.split(' ')
-
-
-                if add_delete_keyword(callback.message.chat.id, new_keyword, 'add') == 'added':
-
-                            bot.edit_message_text(
-                            f'Ключевое слово добавлено ✅\n\n'\
-                            f'Теперь по <b>{ " ".join(new_keyword)}</b>\n'
-                            f'Будут приходить запросы в этот бот 📩\n'
-                            f'Эта позиция дополнительно сохранится  в списке ваших ключевых слов',
-                            callback.message.chat.id, callback.message.id, parse_mode="HTML")
+                            new_choosed_item = {f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'
+                                                f'_{product_memory}':[
+                                product_name,product_model,product_color,product_memory]}
 
                 else:
-                        bot.edit_message_text(
-                         f'<b>Лимит на добавление ключевых слов превышен❌ </b>\n\n'+Text_of_messages.premium_offer,
-                                callback.message.chat.id, callback.message.id, parse_mode="HTML")
+                            new_choosed_item = {f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'
+                                                f'_{product_memory}':[
+                                product_name,product_model,product_spec,product_color,product_memory]}
+                print(new_choosed_item)
+                if prem_status(callback.message.chat.id)==True:
+                    get_add_del_choosed_item(callback.message.chat.id,"add",new_choosed_item)
+                    bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
+                                          callback.message.id,
+                                          reply_markup=choosing_keyboard_proccess(callback.message.chat.id,
+                                                                                  level='memory',
+                                                                                  construct=f'construct_{product_name}_{product_year}_stepmemory'))
+
+                else:
+                    if len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys()))<1:
+                        print('проблема',len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys())))
+                        get_add_del_choosed_item(callback.message.chat.id, "add", new_choosed_item)
+                        bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
+                                              callback.message.id,
+                                              reply_markup=choosing_keyboard_proccess(callback.message.chat.id,
+                                                                                      level='memory',
+                                                                                      construct=f'construct_{product_name}_{product_year}_stepmemory'))
+
+                    else:
+                        bot.edit_message_text(premium_offer, callback.message.chat.id,
+                                              callback.message.id)
+
+
+                        # else:
+
+
+                # else:
+                #         bot.edit_message_text(
+                #          f'<b>Лимит на добавление ключевых слов превышен❌ </b>\n\n'+Text_of_messages.premium_offer,
+                #                 callback.message.chat.id, callback.message.id, parse_mode="HTML")
+
+
+            elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_delete'):
+                print(callback.data)
+                product_name = callback.data.split('_')[1]
+                product_year = callback.data.split('_')[2]
+                product_model = callback.data.split('_')[3]
+
+
+                product_spec = callback.data.split('_')[4]
+                product_color = callback.data.split('_')[5]
+                product_memory = callback.data.split('_')[6]
+
+                # print(product_name, product_year, product_model,product_spec,product_color,pr)
+                to_del=f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'\
+                                                f'_{product_memory}'
+                if to_del in tuple(get_add_del_choosed_item(callback.message.chat.id,"get").keys()):
+                    if get_add_del_choosed_item(callback.message.chat.id,"del",to_del)=='deleted':
+                        bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,  callback.message.id,
+                reply_markup = choosing_keyboard_proccess(callback.message.chat.id,
+                                                          level='memory',
+                                                          construct=f'construct_{product_name}_{product_year}_stepmemory'))
 
 
 
 
 
 
-import asyncio
 if __name__=='__main__':
     while True :
         try:
