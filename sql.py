@@ -365,8 +365,15 @@ def get_user_and_keywords(user_id,checking=None):
             result=json.loads(result[0])
             return result
         else:
-            userid_and_keyword=(user_id,json.loads(result[0]))
-            return tuple(userid_and_keyword)
+            keywords=json.loads(result[0])
+            # print(keywords)
+            choosed_items=list(get_add_del_choosed_item(user_id,'get').values())
+            # print(choosed_items)
+            keywords=keywords+choosed_items
+            print(keywords)
+            tuple_userid_kwrd=(user_id,keywords)
+            print(tuple_userid_kwrd)
+            return tuple_userid_kwrd
     else:
         if checking is None :
             result=json.loads(result[0])
@@ -378,6 +385,10 @@ def get_user_and_keywords(user_id,checking=None):
 
 
 # print(get_user_and_keywords(704718950,True))
+
+
+
+
 def prem_status(user_id):
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()

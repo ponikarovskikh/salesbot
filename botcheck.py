@@ -13,13 +13,13 @@ from telebot.asyncio_handler_backends import State, StatesGroup
 from telebot.callback_data import CallbackData, CallbackDataFilter
 from telebot.asyncio_filters import AdvancedCustomFilter
 import Text_of_messages
-import config
+from config import *
 from sql import *
 from keyboards import *
 from requests.exceptions import ReadTimeout
 from Text_of_messages import *
 
-bot = telebot.TeleBot(token=config.token_GorbushkinService)
+bot = telebot.TeleBot(token=token_GorbushkinService)
 
 
 
@@ -66,7 +66,7 @@ def idsend(msg:Message):
             link = f"[{username}](https://t.me/{username})"
             bot.send_message(msg.chat.id, link, parse_mode='Markdown', disable_web_page_preview=True,reply_markup=menu_keyboard_2stage(msg.chat.id))
 
-    #блок ключевых слов
+#блок ключевых слов
 @bot.message_handler(commands=['mykeywords'])
 def kwrdupdt(msg:Message):
         if msg.chat.type=='group':
@@ -137,6 +137,8 @@ def kwrd_list_del(callback):
               bot.edit_message_text('Чтото не так со списком', callback.message.chat.id, callback.message.id)
 
     #банлист
+
+# логика блока бана
 @bot.message_handler(commands=['banlist_show'])
 def block_list_show(msg:Message):
         if msg.chat.type=='group':
@@ -151,9 +153,6 @@ def block_list_show(msg:Message):
             else:
                  bot.send_message(msg.chat.id,banlist_preview
                                              ,reply_markup=banlistmarkup(msg.from_user.id,blocklist))
-
-
-
 
 @bot.message_handler(commands=['banlist_clear'])
 def block_list_clear(msg:Message):
@@ -172,38 +171,33 @@ def block_list_clear(msg:Message):
 
 
 
+# Модуль оплаты премиума
+
+@bot.pre_checkout_query_handler(func=lambda query: True)
+def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
+    print(pre_checkout_query)
+    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,error_message='Что-то не так')
 
 
+@bot.message_handler(content_types=['successful_payment'])
+def process_successful_payment(msg: Message):
+    # print('successful_payment')
+    print(msg)
+    # message=json.dumps(message,ensure_ascii=False)
+    if str(msg.from_user.id).lower() in str(msg.successful_payment.invoice_payload):
+        if controling_premium(msg.from_user.id, new_premium_status=True) == 2:
+            bot.send_message(msg.chat.id, premium_purchase_ok,
+                             parse_mode='HTML')
+
+    # логика кнопок
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    #-----------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
                             #ПРОВЕРКА ПОТОКА СООБЩЕНИЙ
     # чекать все смс из чатов
 @bot.message_handler(content_types=['text'])
 def messagecheck(msg:Message):
-        print(msg.text,msg.chat.id)
+        # print(msg.text,msg.chat.id)
         if msg.chat.type =='private':
             if 'Главное меню' in msg.text:
                 # print(22)
@@ -226,14 +220,8 @@ def messagecheck(msg:Message):
                     # bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
                     bot.send_invoice(msg.chat.id, 'Premium-тариф', '⏬⏬Оплатить на 30 дней⏬⏬',f'buy_premium'
                                                                                        f'_{msg.from_user.id}',
-                                     config.token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
+                                     token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
                             'Купить', 990 * 100)])
-
-
-
-
-
-
             elif 'FAQ' in msg.text:
                 bot.send_message(msg.chat.id, support_info, parse_mode='HTML',
                                  )
@@ -254,15 +242,17 @@ def messagecheck(msg:Message):
             #     bot.send_message(msg.chat.id, 'Раздел Статистика запросов в разработке')
             else:
                  bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
-        if msg.chat.type=='supergroup' :
+        if 'group' in msg.chat.type:
             # print(msg)
             #По тех причинам мы не в состоянии связаться с человеком если отсутствует никнейн добавляте себе его и мы
             # обязатьно с вами свяжемся
 
 
             Text = msg.text
+            print("Text-",Text)
             sender_id = msg.from_user.id
             sender_username = msg.from_user.username
+            print('sender_id sender_username',sender_id,sender_username)
             crdtl = 'None'
             if ("_@_set") in Text:
                 crdtl = Text[Text.index('set_@_'):Text.index('_@_set') + 6]
@@ -271,9 +261,11 @@ def messagecheck(msg:Message):
                 crdtl = crdtl.split('_@_')
                 sender_id = crdtl[1]
                 sender_username = crdtl[2]
+            else:
+                print("_@_set not in Text" )
 
             message_correct=Text.lower()
-            # print(message_correct)
+            print('сооьщ до полного перевода на англ',message_correct)
             message_correct=message_correct.split(' ')
             # print(message_correct)
             for item in message_correct:
@@ -282,42 +274,90 @@ def messagecheck(msg:Message):
                     message_correct.insert(message_correct.index(item),russiandict[item])
                     message_correct.remove(item)
             message_correct=' '.join(message_correct)
-            # print(message_correct)
+            print('а теперь после полного преервода',message_correct)
             users_and_keywords=[]
             def users_and_keywords_list(access_sending:tuple,users_and_keywords:list):
                 for user_id in  access_sending:
-                    # print(user_id)
-                    users_and_keywords.append(get_user_and_keywords(user_id,checking=True))
-                # print(users_and_keywords)
+                    print(user_id)
+                    userkwrd=get_user_and_keywords(user_id,checking=True)
+                    print(userkwrd)
+                    users_and_keywords.append(userkwrd)
+                    print('сейчас в польз и их словах ==',users_and_keywords)
+                print(users_and_keywords)
                 return tuple(users_and_keywords)
 
 
-
+            # проверяем sender на наличие хоть у кого то в банлисте и высылаем список  тех у кого у он не в бане
             access_sending = get_users_without_sendusermsg_in_blocklist(sender_id)
-            # print(access_sending)
+            print('наши пользователи у которых отправитель не найден в блок листе ',access_sending)
+            # кортеж из юзера нашего бота и его ключевых слов ,теперь включая все слова, которые в разделе выбор
+            # товаров
             checkinglist = users_and_keywords_list(access_sending,users_and_keywords)
+            print('кого и по чему проверка',checkinglist)
+
+            # начало проверки
             for user_keys in checkinglist:
 
                 user_id_to=int(user_keys[0])
                 keywords_check=user_keys[1]
-                # print(user_id_to)
-                # print(keywords_check)
+                print(user_id_to)
+                print('список проверяемых слов ',keywords_check)
+
+                with open('IPHONE_LIST.json', 'r') as f:
+                    productlist = json.load(f)
+                priorities_model=[]
+                priorities_color=[]
+                priorities_memories=[]
+                for product in tuple(productlist.keys()):
+                    years=productlist[product]
+                    for year in tuple(years.keys()):
+                        models=years[year]
+                        for model in models:
+                            if model not in priorities_model:
+                                priorities_model.append(model)
+                            specs=models[model]
+                            for spec in specs:
+                                colors=specs[spec]
+                                for color in colors:
+                                    if color not in priorities_color:
+                                        priorities_color.append(color)
+                                    memories=colors[color]
+                                    for memory in memories:
+                                        if memory not in priorities_memories:
+                                            priorities_memories.append(memory)
+
+
+
+                # print(priorities_model)
+                # print(priorities_color)
+                # print(priorities_memories)
+
+                priorities=priorities_memories+priorities_color+priorities_model
+                # print(priorities)
+
 
                 for kwrd in keywords_check:
-                    need_send=0
-                    not_need=0
+                    print('clovo',kwrd)
+                    need_send = []
+                    guarantee=0
                     for key in kwrd:
+                        print('elslova',key)
                         if str(key).lower() in  message_correct.lower():
 
-                            need_send+=1
+                            need_send.append(1)
+                            if str(key).lower() in priorities:
+                                guarantee+=1
                         else:
-                            not_need+=1
-                    print(need_send,message_correct,user_id_to)
-                    print(need_send,not_need,sender_id,user_id_to)
+                            # if str(key).lower() not in priorities:
+                                need_send.append(0)
+
+                    print(need_send,guarantee,message_correct,user_id_to)
+                    # print(need_send,not_need,sender_id,user_id_to)
                     if sender_username == 0 and sender_id == 0:
                         sender_username = msg.from_user.username
                         sender_id = msg.from_user.id
-                    if need_send>=3:
+                    print()
+                    if 0 not in need_send or (0 in need_send and guarantee>=3):
                         # if user_id_to!=int(sender_id):
                             if getchangeplaystatus(user_id_to,action='get')!=0:
 
@@ -329,35 +369,28 @@ def messagecheck(msg:Message):
                                 bot.send_message(user_id_to, link_text, parse_mode='Markdown', disable_web_page_preview=True,reply_markup=block_keyboard(sender_id,sender_username,banlist=None))
                                 break
                                 pass
-                    else:
-                        need_send = 0
-                        not_need = 0
-
-# Модуль оплаты премиума
-
-@bot.pre_checkout_query_handler(func=lambda query: True)
-def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
-    print(pre_checkout_query)
-    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,error_message='Что-то не так')
-
-
-
-@bot.message_handler(content_types=['successful_payment'])
-def process_successful_payment(msg:Message):
-    # print('successful_payment')
-    print(msg)
-    # message=json.dumps(message,ensure_ascii=False)
-    if str(msg.from_user.id).lower() in  str(msg.successful_payment.invoice_payload):
-        if controling_premium(msg.from_user.id,new_premium_status=True) ==2:
-            bot.send_message(msg.chat.id, premium_purchase_ok,
-                            parse_mode='HTML')
+                    # else:
+                    #     need_send = 0
+                    #     not_need = 0
 
 
 
 
 
 
-    #логика кнопок
+
+
+
+
+
+
+
+
+
+
+
+#-----------------------------------------------------------------------------------------------------------------
+#     Callback-логика
 @bot.callback_query_handler(func=lambda callback:callback.data)
 def callback_logic(callback):
             # print(callback.data)

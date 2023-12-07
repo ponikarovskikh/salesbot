@@ -276,8 +276,12 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
 
                             if model in kybmark.keys():
                                 button_text = f'{kybmark[model]}{kybmark[spec]}{kybmark[color]}{memory}'
+                                if memory in kybmark.keys():
+                                    button_text = f'{kybmark[model]}{kybmark[spec]}{kybmark[color]}{kybmark[memory]}'
                             else:
                                 button_text = f'{model}{kybmark[spec]}{kybmark[color]}{memory}'
+                                if memory in kybmark.keys():
+                                    button_text = f'{model}{kybmark[spec]}{kybmark[color]}{kybmark[memory]}'
 
                             for choosed in choosed_items:
                                 if choosed in callback_data:
@@ -286,8 +290,12 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
                                                          f'{memory}_delete')
                                     if model in kybmark.keys():
                                         button_text = f'✅{kybmark[model]}{kybmark[spec]}{kybmark[color]}{memory}'
+                                        if memory in kybmark.keys():
+                                            button_text = f'✅{kybmark[model]}{kybmark[spec]}{kybmark[color]}{kybmark[memory]}'
                                     else:
                                         button_text = f'✅{model}{kybmark[spec]}{kybmark[color]}{memory}'
+                                        if memory in kybmark.keys():
+                                            button_text = f'✅{model}{kybmark[spec]}{kybmark[color]}{kybmark[memory]}'
 
 
 
@@ -329,7 +337,8 @@ kybmark = {
     "airpods":"🎧",
     "watch":"⌚️",
     "iphone":"📱",
-    "macbook":"💻"
+    "macbook":"💻",
+    "1t":"1T"
 
 }
 
