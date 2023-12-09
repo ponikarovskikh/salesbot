@@ -183,7 +183,25 @@ def add_delete_keyword(user_id:int,keyword=None,action:str=None):
         conn.commit()
         print('keywords_cleear')
         return 'keywords_clear'
-# print( add_delete_keyword(keyword=f'iphone {16}',user_id=704718950,action='add'))
+    elif action =='1remain':
+        if len(result)>0:
+            keywords = json.loads(result[0])
+            keywords_limit=0
+            premium=bool(result[2])
+            print(keywords,keywords_limit,premium)
+            if len(keywords)>1:
+                first_key=keywords[0]
+                keywords.clear()
+                keywords.append(first_key)
+                keywords = json.dumps(keywords)
+                cursor.execute('UPDATE users SET keywords = ? WHERE user_id = ?', (keywords, user_id))
+                conn.commit()
+                return '1remain'
+            else:
+                return '1remain'
+
+
+# print( add_delete_keyword(704718950,None,action='1remain'))
 
 
 
@@ -226,10 +244,30 @@ def get_add_del_choosed_item(user_id=None,action=None,item=None):
             cursor.execute('UPDATE users SET choosed_items = ? WHERE user_id = ?', (choosed_items, user_id))
             conn.commit()
             return 'deleted'
+    elif action == '1remain':
+        if len(result) > 0:
+            choosed_items = json.loads(result[0])
+            if len(choosed_items)==0:
+                return 'cleared'
+
+            else:
+
+                print(len(choosed_items))
+
+                first_item=tuple(choosed_items.items())[0]
+                print(first_item)
+
+                choosed_items.clear()
+                choosed_items[first_item[0]]=first_item[1]
+                choosed_items = json.dumps(choosed_items)
+                # print(choosed_items)
+                cursor.execute('UPDATE users SET choosed_items = ? WHERE user_id = ?', (choosed_items, user_id))
+                conn.commit()
+                return 'cleared'
 
 
 
-# print(get_add_del_choosed_item(704718950,'get',{"iphone_12_pro":["iphone","14","pro"]}))
+# print(get_add_del_choosed_item(704718950,'1left',{"iphone_12_pro":["iphone","14","pro"]}))
 
 
 
@@ -260,12 +298,17 @@ def premium_alive_period(user_id:int,action:str):
         elif action=='remain_time':
             cursor.execute("SELECT expiration_date FROM users WHERE user_id = ?", (user_id,))
             expiration_date = cursor.fetchone()[0]
-            expiration_date = datetime.strptime(expiration_date, '%Y-%m-%d')
-            remaining_days = (expiration_date - current_datetime).days
-            conn.close()
-            return remaining_days
+            if expiration_date !=0:
+                expiration_date = datetime.strptime(expiration_date, '%Y-%m-%d')
+                remaining_days = (expiration_date - current_datetime).days
+
+                return remaining_days
+            else:
+                return 0
         elif action=='null_time':
             cursor.execute("UPDATE users SET purchase_date = ? WHERE user_id = ?", (0, user_id))
+
+            conn.commit()
     # Вычисление и установка даты окончания срока действия премиума (30 суток)
             cursor.execute("UPDATE users SET expiration_date = ? WHERE user_id = ?", (0, user_id))
             conn.commit()
@@ -310,18 +353,65 @@ def controling_premium(user_id:int,new_premium_status:bool):
         if premium is True:
             premium = False
             keywords_limit = 1
+
             cursor.execute('UPDATE users SET keywords_limit = ?,premium=? WHERE user_id = ?',
                            (keywords_limit, premium, user_id))
             conn.commit()
-            premium_alive_period(user_id, 'null_time')
-            add_delete_keyword(user_id,0,'clear_list_keywords')
-            return 3
+            if  premium_alive_period(user_id, 'null_time') =='time has been nulled':
+                print('yes')
+                if get_add_del_choosed_item(user_id,action='1remain') =='cleared':
+                    print('yes')
+                    if  add_delete_keyword(user_id,0,'1remain')=='1remain':
+                        print('yes')
+                        return 3
+
+print( controling_premium(user_id=704718950,new_premium_status=False    ))
+
+
+
+
+def prem_status(user_id):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT premium FROM users WHERE user_id = ?', (user_id,))
+    result = cursor.fetchone()
+    if result[0]==1:
+        return True
+    else:
+        return False
+
+
+def out_premium_check(user_id,action=None):
+    # premium=prem_status(user_id)
+    period = premium_alive_period(user_id,'remain_time')
+    print(type(period))
+
+    if period !=0 and period>0:
+        if action is not None:
+            return period
         else:
-            premium = False
-            keywords_limit = 1
-            add_delete_keyword(user_id,0,'clear_list_keywords')
-            return 4
-# print( controling_premium(user_id=704718950,new_premium_status=True))
+            return 'skip_prem'
+    elif period <= 0 :
+        print(period)
+        if prem_status(user_id)==True:
+           if controling_premium(user_id, False) == 3:
+               print('зашел')
+               return 'premium_out'
+        else:
+            return 'skip_notprem'
+
+
+
+
+
+
+# print(out_premium_check(704718950))
+
+
+
+
+
+
 
 
 
@@ -389,15 +479,7 @@ def get_user_and_keywords(user_id,checking=None):
 
 
 
-def prem_status(user_id):
-    conn = sqlite3.connect('bot_db.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT premium FROM users WHERE user_id = ?', (user_id,))
-    result = cursor.fetchone()
-    if result[0]==1:
-        return True
-    else:
-        return False
+
 # 1111 1111 1111 1026 12 22 000
 # print(prem_status(704718950))
 

@@ -199,49 +199,63 @@ def process_successful_payment(msg: Message):
 def messagecheck(msg:Message):
         # print(msg.text,msg.chat.id)
         if msg.chat.type =='private':
-            if 'Главное меню' in msg.text:
-                # print(22)
-                bot.send_message(msg.chat.id, text=f'Главное меню:', reply_markup=menu_keyboard_1stage())
-            elif 'Продавать товар' in msg.text:
-                print(9)
-                bot.send_message(msg.chat.id, text=f'Продавать товар:', reply_markup=menu_keyboard_2stage(msg.chat.id))
-            elif 'Блок-лист' in  msg.text:
-                # bot.send_message(msg.chat.id,'Раздел Блок-лист в разработке')
-                 block_list_show(msg)
-            elif 'Выбрать товары'in msg.text:
-                # print("yes")
-                # bot.send_message(msg.chat.id,'Раздел Выбрать товары в разработке')
-                bot.send_message(msg.chat.id, 'Какие сообщения по товарам получать?',
-                                 reply_markup=choosing_keyboard_proccess(msg.chat.id,level='memory'))
-            elif  'Premium-тариф' in msg.text:
-                if prem_status(msg.chat.id)==True:
-                    bot.send_message(msg.chat.id,'Ваш Premium-тариф активен',reply_markup=menu_keyboard_2stage(msg.chat.id))
-                else:
-                    # bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
-                    bot.send_invoice(msg.chat.id, 'Premium-тариф', '⏬⏬Оплатить на 30 дней⏬⏬',f'buy_premium'
-                                                                                       f'_{msg.from_user.id}',
-                                     token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
-                            'Купить', 990 * 100)])
-            elif 'FAQ' in msg.text:
-                bot.send_message(msg.chat.id, support_info, parse_mode='HTML',
-                                 )
+            if out_premium_check(msg.chat.id) in ['skip_prem','skip_notprem']:
 
-            elif  'Ключевые слова' in msg.text:
-                 kwrdupdt(msg)
-            elif  'Продажи на паузу'in msg.text:
-                getchangeplaystatus(msg.chat.id,action=0)
-                bot.send_message(msg.chat.id, 'Продажи приостановлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
-            elif 'руководство бота' in msg.text.lower():
-                 support_handler(msg)
-                # bot.send_message(msg.chat.id, 'Раздел продажи на паузу в разработке')
-            elif 'Возобновить продажи' in msg.text:
-                 getchangeplaystatus(msg.chat.id, action=1)
-                 bot.send_message(msg.chat.id, 'Продажи возобновлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
-            # elif 'Статистика запросов' in msg.text :
-            #     # print(msg.chat)
-            #     bot.send_message(msg.chat.id, 'Раздел Статистика запросов в разработке')
+                if 'Главное меню' in msg.text:
+                    # print(22)
+                    bot.send_message(msg.chat.id, text=f'Главное меню:', reply_markup=menu_keyboard_1stage())
+                elif 'Продавать товар' in msg.text:
+                    print(9)
+                    bot.send_message(msg.chat.id, text=f'Продавать товар:', reply_markup=menu_keyboard_2stage(msg.chat.id))
+                elif 'Блок-лист' in  msg.text:
+                    # bot.send_message(msg.chat.id,'Раздел Блок-лист в разработке')
+                     block_list_show(msg)
+                elif 'Выбрать товары'in msg.text:
+                    # print("yes")
+                    # bot.send_message(msg.chat.id,'Раздел Выбрать товары в разработке')
+                    bot.send_message(msg.chat.id, 'Какие сообщения по товарам получать?',
+                                     reply_markup=choosing_keyboard_proccess(msg.chat.id,level='memory'))
+                elif  'Premium-тариф' in msg.text:
+                    if prem_status(msg.chat.id)==True:
+                        bot.send_message(msg.chat.id,f'Ваш Premium-тариф активен\n\n '
+                                                     f'Осталось {out_premium_check(msg.chat.id,action=True)} дней ',
+                                         reply_markup=menu_keyboard_2stage(
+                                                     msg.chat.id))
+                    else:
+                        # bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
+                        bot.send_invoice(msg.chat.id, 'Premium-тариф', '⏬⏬Оплатить на 30 дней⏬⏬',f'buy_premium'
+                                                                                           f'_{msg.from_user.id}',
+                                         token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
+                                'Купить', 100 * 100)])
+                elif 'FAQ' in msg.text:
+                    bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
+
+                elif  'Ключевые слова' in msg.text:
+                     kwrdupdt(msg)
+                elif  'Продажи на паузу'in msg.text:
+                    getchangeplaystatus(msg.chat.id,action=0)
+                    bot.send_message(msg.chat.id, 'Продажи приостановлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
+                elif 'руководство бота' in msg.text.lower():
+                     support_handler(msg)
+                    # bot.send_message(msg.chat.id, 'Раздел продажи на паузу в разработке')
+                elif 'Возобновить продажи' in msg.text:
+                     getchangeplaystatus(msg.chat.id, action=1)
+                     bot.send_message(msg.chat.id, 'Продажи возобновлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
+                # elif 'Статистика запросов' in msg.text :
+                #     # print(msg.chat)
+                #     bot.send_message(msg.chat.id, 'Раздел Статистика запросов в разработке')
+                else:
+                     bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
             else:
-                 bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
+                bot.send_message(msg.chat.id,'Упс, ваш Premium-период истек.\n\n'
+                                             'Количество ваших ключевых слов и выбранных товаров сократилось до 1.'
+                                             '\n\n'
+                                             'Желаете Продлить ? - кликните на '
+                                             '<b>Premium-тариф</b>',
+                                 parse_mode='HTML')
+                messagecheck(msg=msg)
+
+
         if 'group' in msg.chat.type:
             # print(msg)
             #По тех причинам мы не в состоянии связаться с человеком если отсутствует никнейн добавляте себе его и мы
@@ -567,8 +581,9 @@ def callback_logic(callback):
                                                                                       construct=f'construct_{product_name}_{product_year}_stepmemory'))
 
                     else:
-                        bot.edit_message_text(premium_offer, callback.message.chat.id,
-                                              callback.message.id)
+                        # bot.edit_message_text(premium_offer, callback.message.chat.id,
+                        #                       callback.message.id)
+                        bot.send_message(callback.message.chat.id,premium_offer)
 
 
                         # else:
