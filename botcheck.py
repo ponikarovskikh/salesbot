@@ -19,7 +19,7 @@ from keyboards import *
 from requests.exceptions import ReadTimeout
 from Text_of_messages import *
 
-bot = telebot.TeleBot(token=token_GorbushkinService)
+bot = telebot.TeleBot(token=token_GorbushkinService,threaded=True)
 
 
 
@@ -47,6 +47,8 @@ def welcome(msg:Message):
 @bot.message_handler(text=['Продавать товар'])
 def menu(msg:Message):
           bot.send_message(msg.chat.id,text=f'Выберите сообщения которые хотите получать:',reply_markup=menu_keyboard_2stage(msg.chat.id))
+
+
 
 
 @bot.message_handler(commands=['support'],regexp='Руководство бота')
@@ -182,10 +184,17 @@ def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
 @bot.message_handler(content_types=['successful_payment'])
 def process_successful_payment(msg: Message):
     # print('successful_payment')
-    print(msg)
+    # print(msg)
     # message=json.dumps(message,ensure_ascii=False)
     if str(msg.from_user.id).lower() in str(msg.successful_payment.invoice_payload):
         if controling_premium(msg.from_user.id, new_premium_status=True) == 2:
+            bot.send_message(msg.chat.id, premium_purchase_ok,
+                             parse_mode='HTML')
+
+    elif str(msg.from_user.id).lower()  not in str(msg.successful_payment.invoice_payload):
+        user_pay=str(msg.successful_payment.invoice_payload)[12:]
+        print(user_pay)
+        if controling_premium(user_pay, new_premium_status=True) == 2:
             bot.send_message(msg.chat.id, premium_purchase_ok,
                              parse_mode='HTML')
 
@@ -222,8 +231,11 @@ def messagecheck(msg:Message):
                                          reply_markup=menu_keyboard_2stage(
                                                      msg.chat.id))
                     else:
-                        # bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
-                        bot.send_invoice(msg.chat.id, 'Premium-тариф', '⏬⏬Оплатить на 30 дней⏬⏬',f'buy_premium'
+                        bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
+                        bot.send_invoice(msg.chat.id, 'Premium-тариф', f'\n\n⏬⏬Оплатить {msg.from_user.first_name} '\
+                                                                       f'Premium на '\
+                                                                       f'30 дней⏬⏬',
+                                                                          f'buy_premium'
                                                                                            f'_{msg.from_user.id}',
                                          token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
                                 'Купить', 100 * 100)])

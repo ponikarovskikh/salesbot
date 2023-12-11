@@ -36,48 +36,27 @@ app = Client("salebot")
 
 @app.on_message(filters)
 def forward_to_private_chat(app, message):
-    if message.from_user.id!=6304024040:
-        print(message)
-
-        user_id=message.from_user.id
-        text=message.text
-        # print(message.chat.id)
-        message_id=message.id
-        # print(message_id)
-        # Замените "YOUR_PRIVATE_CHAT_ID" на ваш ID личной беседы
-        # private_chat_id = "6825936798"
-        # try :
-        #         chat_member = str(app.get_chat_member(chat_id=message.chat.id, user_id=user_id))
-        #         chat_member = json.loads(chat_member)['user']
-        #
-        # except Exception as e:
-        #         print('Жопа с правами')
-        # # chat_member=json.loads(chat_member)['user']
-        # print(chat_member.keys())
-        resolve=json.loads(str(message.from_user))
-
-        if 'username' in resolve.keys():
-                usrnm = message.from_user.username
-
-                print('-------------\n',resolve['username'])
-                print(message.text)
-                app.send_message(text=f'set_@_{user_id}_@_{usrnm}_@_set' \
-                                      f'{message.text}', chat_id=-1001901838848)
-                pass
-        else:
-                pass
-
-        # print(chat_member)
-        # username=chat_member['username']
-        # user_id=chat_member['id']
-        # username,user_id
-        # chat_member=str(chat_member)
-        # chat_member=dict(chat_member)
-        # print(chat_member)
-        # if 'username' in chat_member.keys():
+    print(message)
+    if int(message.from_user.id)!=6825936798:
+        if int(message.chat.id) != -1001869659170:
 
 
-        # app.forward_messages(chat_id= -4031390915,from_chat_id=message.from_user.id,message_ids=[message.id])
+            CANAL=message.chat.title
+            user_id=message.from_user.id
+            text=message.text
+            resolve=json.loads  (str(message.from_user))
 
-# Запуск бота в бесконечном цикле
+            if 'username' in resolve.keys():
+                if 'bot' not in text.lower() and "True"  not in str(resolve['is_bot']):
+                    usrnm = message.from_user.username
+
+                    print('-------------\n',resolve['username'])
+                    print(message.text)
+                    app.send_message(text=f'{CANAL}\n\n    set_@_{user_id}_@_{usrnm}_@_set' \
+                                          f'{message.text}', chat_id=-1001869659170)
+
+
+
+
+    # Запуск бота в бесконечном цикле
 app.run()

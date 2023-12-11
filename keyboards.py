@@ -24,6 +24,7 @@ def menu_keyboard_1stage():
     keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True,one_time_keyboard=True)
     play_button = types.KeyboardButton('Продавать товар')
 
+
     keyboard.add(play_button)
 
     return keyboard
