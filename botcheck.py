@@ -1,105 +1,103 @@
-import telebot.async_telebot
+from telebot import asyncio_filters
+from telebot.asyncio_storage import StateMemoryStorage as STM
 from telebot.async_telebot import AsyncTeleBot
+from telebot.asyncio_handler_backends import StatesGroup as STSGR,State as ste
 import asyncio
-from telebot import asyncio_filters
-from telebot.asyncio_storage import StateMemoryStorage
-from telebot.asyncio_handler_backends import State, StatesGroup
-from telebot.callback_data import CallbackData, CallbackDataFilter
-from telebot.asyncio_filters import AdvancedCustomFilter
-from telebot.storage import StateMemoryStorage
-from telebot import types
-from telebot import asyncio_filters
-from telebot.asyncio_handler_backends import State, StatesGroup
-from telebot.callback_data import CallbackData, CallbackDataFilter
-from telebot.asyncio_filters import AdvancedCustomFilter
-import Text_of_messages
-from config import *
-from sql import *
-from keyboards import *
-from requests.exceptions import ReadTimeout
 from Text_of_messages import *
+from config import *
+from keyboards import *
 
-bot = telebot.TeleBot(token=token_GorbushkinService,threaded=True)
+bot = AsyncTeleBot(token=token_GorbushkinService,
+                   state_storage=STM())
+
+class SuperStates(STSGR):
+    getkeyword = ste()
 
 
 
-# @bot.message_handler(commands=['menu'])
-# def menu_up(callback=None,msg:Message=None):
-#     if callback is not None and msg is None:
-#         bot.send_message(callback.message.chat.id,'Главное меню',reply_markup=menu_keyboard_2stage(callback.message.chat.id))
-#     elif msg is not None and callback is None:
-#         bot.send_message(msg.chat.id,'Главное меню',reply_markup=menu_keyboard_2stage(msg.chat.id))
+
+# print(StateMemoryStorage().get_state(Message.de_json(dict).id,Message.de_json().from_user.id))
+
 
 @bot.message_handler(commands=['start'])
-def welcome(msg:Message):
-        if  'group' in msg.chat.type:
-            pass
-        else:
+async def welcome(msg:Message):
+        if  'private' in msg.chat.type:
+
             username = msg.from_user.username
             user_id=msg.from_user.id
             chat_id=msg.chat.id
-            bot.send_message(msg.chat.id,text=f'Привет, {username}!\n\n{welcome_preview}')
+            await bot.send_message(msg.chat.id,text=f'Привет, {username}!\n\n{welcome_preview}')
             if add_users_field(user_id, username,chat_id) =='new added':
-                 bot.send_message(msg.chat.id,'Друг, видим что ты впервые у нас ознакомься с функционалом - жми Продавать товар',reply_markup=menu_keyboard_1stage())
+                await bot.send_message(msg.chat.id,'Друг, видим что ты впервые у нас ознакомься с функционалом - жми '
+                                               'Продавать товар',reply_markup=menu_keyboard_1stage())
             else:
-                 bot.send_message(msg.chat.id,'Друг, и снова здраствуй!',reply_markup=menu_keyboard_1stage())
+               await  bot.send_message(msg.chat.id,'Друг, и снова здраствуй!',reply_markup=menu_keyboard_1stage())
 
-@bot.message_handler(text=['Продавать товар'])
-def menu(msg:Message):
-          bot.send_message(msg.chat.id,text=f'Выберите сообщения которые хотите получать:',reply_markup=menu_keyboard_2stage(msg.chat.id))
+# @bot.message_handler(text=['Продавать товар'])
+async def sell(msg:Message):
+          await bot.send_message(msg.chat.id,text=f'Вы в разделе продажа товаров.\n\n'
+                                                  f'Сюда будут приходить все сообщения о товарах согласно вашим'
+                                                  f'ключевым словам',
+                            reply_markup=menu_keyboard_2stage(msg.chat.id))
 
 
 
 
-@bot.message_handler(commands=['support'],regexp='Руководство бота')
-def support_handler(msg:Message):
-    if msg.chat.type == 'group':
-        pass
-    else:
-          bot.send_message(msg.chat.id, text=support_info, parse_mode='HTML',reply_markup=menu_keyboard_2stage(msg.chat.id))
+@bot.message_handler(commands=['support'])
+async def  support_handler(msg:Message):
+    print('support')
+    if msg.chat.type == 'private':
+        await  bot.send_message(msg.chat.id, text=support_info, parse_mode='HTML',reply_markup=menu_keyboard_2stage(
+            msg.chat.id))
 
     # Утилита для получения  айди самого себя
 @bot.message_handler(commands=['ids'])
-def idsend(msg:Message):
-        if msg.chat.type=='group':
-            pass
-        else:
+async def idsend(msg:Message):
+        if msg.chat.type=='private':
             username = msg.from_user.username
             link = f"[{username}](https://t.me/{username})"
-            bot.send_message(msg.chat.id, link, parse_mode='Markdown', disable_web_page_preview=True,reply_markup=menu_keyboard_2stage(msg.chat.id))
+            await  bot.send_message(msg.chat.id, link, parse_mode='Markdown', disable_web_page_preview=True,
+                              reply_markup=menu_keyboard_2stage(msg.chat.id))
 
 #блок ключевых слов
 @bot.message_handler(commands=['mykeywords'])
-def kwrdupdt(msg:Message):
-        if msg.chat.type=='group':
-            pass
-        else:
+async def kwrdupdt(msg:Message):
+        if msg.chat.type=='private':
             keywords= get_user_and_keywords(msg.from_user.id)
 
             print(keywords)
 
             if len(keywords)==0:
-                 bot.send_message(msg.chat.id,'💥🔦 <b>Мои ключевые слова</b>\n\nВ данный момент у тебя нет ключевых слов и фраз.',parse_mode='html',reply_markup=adddelete_keywords('addonly'))
+               await  bot.send_message(msg.chat.id,'💥🔦 <b>Мои ключевые слова</b>\n\nВ данный момент у тебя нет ключевых '
+                                               'слов и фраз.',parse_mode='html',reply_markup=adddelete_keywords('addonly'))
 
             elif len(keywords)>0:
                 keywords_showing=[]
                 for key in keywords:
                       keywords_showing.append(' '.join(key))
                 keywords_showing='\n'.join(keywords_showing)
-                bot.send_message(msg.chat.id,f'💥🔦 <b>Мои ключевые слова</b>\n\n{keywords_showing}',parse_mode='html',reply_markup=adddelete_keywords())
+                await   bot.send_message(msg.chat.id,f'💥🔦 <b>Мои ключевые слова</b>\n\n{keywords_showing}',
+                                  parse_mode='html',reply_markup=adddelete_keywords())
 
         #to do: убирать ключевые слова по клвавиатуре и добавлять по next step handler
 
-def add_delete_keyword_handler(callback):
-         bot.edit_message_text('Добавьте ваше новое ключевое слово\n'
+async def add_delete_keyword_handler(callback):
+        await bot.edit_message_text('Добавьте ваше новое ключевое слово\n'
                               'Только <b>одно</b> слово на одной строке!\n'
                               'Например ->\n\nipad 3 mini\niphone 10s\nairpods 2'
                               , callback.message.chat.id, callback.message.id,
                               parse_mode='HTML')
-         bot.send_message(callback.message.chat.id,'И затем жми отправить',reply_markup=ReplyKeyboardRemove())
-         print(callback.message)
-         bot.register_next_step_handler(callback.message,add_new_keyword)
-def add_new_keyword(msg:Message):
+        await bot.send_message(callback.message.chat.id,'И затем жми отправить')
+        print(callback.from_user.id, callback.message.chat.id)
+        # await bot.register_next_step_handler(callback.message,add_new_keyword)
+        await bot.set_state(chat_id=callback.from_user.id,state=SuperStates.getkeyword,user_id=
+                                          callback.message.chat.id)
+
+@bot.message_handler(state=SuperStates.getkeyword)
+async def add_new_keyword(msg:Message):
+
+        print('state slovil')
+
         if '\n' in msg.text:
             newkeywordslist=msg.text.lower().split('\n')
             print(newkeywordslist)
@@ -108,41 +106,42 @@ def add_new_keyword(msg:Message):
                 newkeyword=keyword.split(' ')
 
                 if add_delete_keyword(msg.chat.id, newkeyword, 'add') == 'added':
-                     bot.send_message(msg.chat.id, f'Ключевое слово {keyword} успешно добавлено!',reply_markup=menu_keyboard_2stage(msg.chat.id))
+                     await bot.send_message(msg.chat.id, f'Ключевое слово {keyword} успешно добавлено!',reply_markup=menu_keyboard_2stage(msg.chat.id))
 
                 else:
-                        bot.send_message(msg.chat.id,
+                        await bot.send_message(msg.chat.id,
                              'Ключевое слово не может быть добавлено, так как превышает лимит 1 из 1.\n\n' + premium_offer,
                              reply_markup=menu_keyboard_2stage(msg.chat.id))
                         break
-
+            await bot.delete_state(msg.from_user.id, msg.chat.id)
         elif '\n' not in msg.text:
                 newkeyword = msg.text.lower().split(' ')
                 if add_delete_keyword(msg.chat.id,newkeyword,'add') =='added':
-                 bot.send_message(msg.chat.id,'Ключевое слово успешно добавлено!',reply_markup=menu_keyboard_2stage(msg.chat.id))
-                 bot.send_message(msg.chat.id, 'Добавим еще?',
+                    await bot.send_message(msg.chat.id,'Ключевое слово успешно добавлено!',reply_markup=menu_keyboard_2stage(
+                      msg.chat.id))
+                    await bot.send_message(msg.chat.id, 'Добавим еще?',
                                   reply_markup=adddelete_keywords('addonly'))
-
+                await bot.delete_state(msg.from_user.id, msg.chat.id)
         else:
-                 bot.send_message(msg.chat.id, '❌Ключевое слово не может быть добавлено, так как превышает лимит 1 из 1.\n\n'+premium_offer,reply_markup=menu_keyboard_2stage(msg.chat.id))
-
+            await bot.send_message(msg.chat.id, '❌Ключевое слово не может быть добавлено, так как превышает лимит 1 из 1.\n\n'+premium_offer,reply_markup=menu_keyboard_2stage(msg.chat.id))
+            await bot.delete_state(msg.from_user.id, msg.chat.id)
 
 @bot.message_handler(commands=['keywordslist_clear'])
-def kwrd_list_del(callback):
+async def kwrd_list_del(callback):
     print('pltcm')
     if callback.message.chat.type == 'group':
         pass
     else:
          if add_delete_keyword(callback.message.chat.id,keyword=None,action='clear_list') == 'keywords_clear':
-             bot.edit_message_text('Ваш список ключевых слов очищен',callback.message.chat.id,callback.message.id,reply_markup=adddelete_keywords('addonly'))
+             await bot.edit_message_text('Ваш список ключевых слов очищен',callback.message.chat.id,callback.message.id,reply_markup=adddelete_keywords('addonly'))
          else:
-              bot.edit_message_text('Чтото не так со списком', callback.message.chat.id, callback.message.id)
+              await bot.edit_message_text('Чтото не так со списком', callback.message.chat.id, callback.message.id)
 
     #банлист
 
 # логика блока бана
 @bot.message_handler(commands=['banlist_show'])
-def block_list_show(msg:Message):
+async def block_list_show(msg:Message):
         if msg.chat.type=='group':
             pass
         else:
@@ -150,14 +149,14 @@ def block_list_show(msg:Message):
             blocklist=add_delete_get_clear_blocked_users(user_id=msg.from_user.id,action='getall')
             print(len(blocklist))
             if len(blocklist)==0:
-                     bot.send_message(msg.chat.id,'⛔ Заблокированные люди\n\nУпс,список пока пуст',reply_markup=menu_keyboard_2stage(msg.chat.id))
+                     await bot.send_message(msg.chat.id,'⛔ Заблокированные люди\n\nУпс,список пока пуст',reply_markup=menu_keyboard_2stage(msg.chat.id))
 
             else:
-                 bot.send_message(msg.chat.id,banlist_preview
+                 await bot.send_message(msg.chat.id,banlist_preview
                                              ,reply_markup=banlistmarkup(msg.from_user.id,blocklist))
 
 @bot.message_handler(commands=['banlist_clear'])
-def block_list_clear(msg:Message):
+async def block_list_clear(msg:Message):
         if msg.chat.type=='group':
             pass
         else:
@@ -166,106 +165,140 @@ def block_list_clear(msg:Message):
             # print(len(blocklist))
             if len(blocklist)!=0:
                if add_delete_get_clear_blocked_users(user_id=msg.from_user.id, action='clear')==3:
-                     bot.send_message(msg.chat.id,'⛔ Блок-лист успешно очищен🧹')
+                     await bot.send_message(msg.chat.id,'⛔ Блок-лист успешно очищен🧹')
 
             else:
-                 bot.send_message(msg.chat.id,'⛔Блок-лист пока пуст ')
+                 await bot.send_message(msg.chat.id,'⛔Блок-лист пока пуст ')
 
 
 
 # Модуль оплаты премиума
 
 @bot.pre_checkout_query_handler(func=lambda query: True)
-def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
+async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
     print(pre_checkout_query)
-    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,error_message='Что-то не так')
+    await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,error_message='Что-то не так')
 
 
 @bot.message_handler(content_types=['successful_payment'])
-def process_successful_payment(msg: Message):
+async def process_successful_payment(msg: Message):
     # print('successful_payment')
     # print(msg)
     # message=json.dumps(message,ensure_ascii=False)
     if str(msg.from_user.id).lower() in str(msg.successful_payment.invoice_payload):
         if controling_premium(msg.from_user.id, new_premium_status=True) == 2:
-            bot.send_message(msg.chat.id, premium_purchase_ok,
+            await bot.send_message(msg.chat.id, premium_purchase_ok,
                              parse_mode='HTML')
 
     elif str(msg.from_user.id).lower()  not in str(msg.successful_payment.invoice_payload):
         user_pay=str(msg.successful_payment.invoice_payload)[12:]
         print(user_pay)
         if controling_premium(user_pay, new_premium_status=True) == 2:
-            bot.send_message(msg.chat.id, premium_purchase_ok,
+            await bot.send_message(msg.chat.id, premium_purchase_ok,
                              parse_mode='HTML')
 
     # логика кнопок
 
 
-#-----------------------------------------------------------------------------------------------------------------
-                            #ПРОВЕРКА ПОТОКА СООБЩЕНИЙ
-    # чекать все смс из чатов
-@bot.message_handler(content_types=['text'])
-def messagecheck(msg:Message):
-        # print(msg.text,msg.chat.id)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# #-----------------------------------------------------------------------------------------------------------------
+#                             ПРОВЕРКА ПОТОКА СООБЩЕНИЙ
+#     чекать все смс из чатов
+@bot.message_handler(func=lambda msg:Message )
+async def messagecheck(msg):
+        print(msg.text,msg.chat.id,msg.chat.type)
         if msg.chat.type =='private':
             if out_premium_check(msg.chat.id) in ['skip_prem','skip_notprem']:
-
+                print( out_premium_check(msg.chat.id))
                 if 'Главное меню' in msg.text:
                     # print(22)
-                    bot.send_message(msg.chat.id, text=f'Главное меню:', reply_markup=menu_keyboard_1stage())
+                    await bot.send_message(msg.chat.id, text=f'Главное меню:', reply_markup=menu_keyboard_1stage())
                 elif 'Продавать товар' in msg.text:
-                    print(9)
-                    bot.send_message(msg.chat.id, text=f'Продавать товар:', reply_markup=menu_keyboard_2stage(msg.chat.id))
+                    await sell(msg)
+                    # await bot.send_message(msg.chat.id, text=f'Продавать товар:', reply_markup=menu_keyboard_2stage(msg.chat.id))
+                    # await bot.send_message(msg.chat.id,'продажа')
+
                 elif 'Блок-лист' in  msg.text:
                     # bot.send_message(msg.chat.id,'Раздел Блок-лист в разработке')
-                     block_list_show(msg)
+                     await block_list_show(msg)
                 elif 'Выбрать товары'in msg.text:
                     # print("yes")
                     # bot.send_message(msg.chat.id,'Раздел Выбрать товары в разработке')
-                    bot.send_message(msg.chat.id, 'Какие сообщения по товарам получать?',
+                    await bot.send_message(msg.chat.id, 'Какие сообщения по товарам получать?',
                                      reply_markup=choosing_keyboard_proccess(msg.chat.id,level='memory'))
                 elif  'Premium-тариф' in msg.text:
                     if prem_status(msg.chat.id)==True:
-                        bot.send_message(msg.chat.id,f'Ваш Premium-тариф активен\n\n '
+                        await bot.send_message(msg.chat.id,f'Ваш Premium-тариф активен\n\n '
                                                      f'Осталось {out_premium_check(msg.chat.id,action=True)} дней ',
                                          reply_markup=menu_keyboard_2stage(
                                                      msg.chat.id))
                     else:
-                        bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
-                        bot.send_invoice(msg.chat.id, 'Premium-тариф', f'\n\n⏬⏬Оплатить {msg.from_user.first_name} '\
-                                                                       f'Premium на '\
-                                                                       f'30 дней⏬⏬',
-                                                                          f'buy_premium'
-                                                                                           f'_{msg.from_user.id}',
-                                         token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
-                                'Купить', 100 * 100)])
+                        await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
+                        # await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'\n\n⏬⏬Оплатить {msg.from_user.first_name} '\
+                        #                                                f'Premium на '\
+                        #                                                f'30 дней⏬⏬',
+                        #                                                   f'buy_premium'
+                        #                                                                    f'_{msg.from_user.id}',
+                        #                  token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
+                        #         'Купить', 100 * 100)])
                 elif 'FAQ' in msg.text:
-                    bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
+                    await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
 
                 elif  'Ключевые слова' in msg.text:
-                     kwrdupdt(msg)
+                      print('кл сл')
+                      await kwrdupdt(msg)
                 elif  'Продажи на паузу'in msg.text:
                     getchangeplaystatus(msg.chat.id,action=0)
-                    bot.send_message(msg.chat.id, 'Продажи приостановлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
+                    await bot.send_message(msg.chat.id, 'Продажи приостановлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
                 elif 'руководство бота' in msg.text.lower():
-                     support_handler(msg)
+                    await  support_handler(msg)
                     # bot.send_message(msg.chat.id, 'Раздел продажи на паузу в разработке')
                 elif 'Возобновить продажи' in msg.text:
                      getchangeplaystatus(msg.chat.id, action=1)
-                     bot.send_message(msg.chat.id, 'Продажи возобновлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
+                     await bot.send_message(msg.chat.id, 'Продажи возобновлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
                 # elif 'Статистика запросов' in msg.text :
                 #     # print(msg.chat)
                 #     bot.send_message(msg.chat.id, 'Раздел Статистика запросов в разработке')
                 else:
-                     bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
+                     await bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
             else:
-                bot.send_message(msg.chat.id,'Упс, ваш Premium-период истек.\n\n'
+                await bot.send_message(msg.chat.id,'Упс, ваш Premium-период истек.\n\n'
                                              'Количество ваших ключевых слов и выбранных товаров сократилось до 1.'
                                              '\n\n'
                                              'Желаете Продлить ? - кликните на '
                                              '<b>Premium-тариф</b>',
                                  parse_mode='HTML')
-                messagecheck(msg=msg)
+                await messagecheck(msg=msg)
 
 
         if 'group' in msg.chat.type:
@@ -392,7 +425,7 @@ def messagecheck(msg:Message):
 
                                 link_text = f"[{sender_username}](https://t.me/{sender_username})\n\n" \
                                             f"{Text}"
-                                bot.send_message(user_id_to, link_text, parse_mode='Markdown', disable_web_page_preview=True,reply_markup=block_keyboard(sender_id,sender_username,banlist=None))
+                                await bot.send_message(user_id_to, link_text, parse_mode='Markdown', disable_web_page_preview=True,reply_markup=block_keyboard(sender_id,sender_username,banlist=None))
                                 break
                                 pass
                     # else:
@@ -418,16 +451,16 @@ def messagecheck(msg:Message):
 #-----------------------------------------------------------------------------------------------------------------
 #     Callback-логика
 @bot.callback_query_handler(func=lambda callback:callback.data)
-def callback_logic(callback):
+async def callback_logic(callback):
             # print(callback.data)
             # /логика бана
             if callback.data == 'banlist_show':
                     blocklist = add_delete_get_clear_blocked_users(user_id=callback.message.chat.id, action='getall')
                     if len(blocklist) == 0:
-                         bot.edit_message_text(f'⛔ Заблокированные люди\n\nНа данный момент ваш список пуст', callback.message.chat.id,
+                         await bot.edit_message_text(f'⛔ Заблокированные люди\n\nНа данный момент ваш список пуст', callback.message.chat.id,
                                           callback.message.id)
                     else:
-                         bot.edit_message_text(f'⛔ Заблокированные люди от которых теперь вы не получаете сообщений в боте:\n\nОчистить всех /banlist_clear\n\nУдалить человека из Блок-листа - выберите пользователя ниже',
+                         await bot.edit_message_text(f'⛔ Заблокированные люди от которых теперь вы не получаете сообщений в боте:\n\nОчистить всех /banlist_clear\n\nУдалить человека из Блок-листа - выберите пользователя ниже',
                                           callback.message.chat.id,
                                             callback.message.id, reply_markup=banlistmarkup(callback.message.chat.id,blocklist))
 
@@ -442,7 +475,7 @@ def callback_logic(callback):
                 print(blocklist)
                 if len(blocklist)==0:
                     if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
-                         bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,callback.message.id,reply_markup=unblock_keyboard(block_id, block_name,None))
+                         await bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,callback.message.id,reply_markup=unblock_keyboard(block_id, block_name,None))
                 else:
                     for ban_item in blocklist:
                         if block_id  not in ban_item:
@@ -452,7 +485,7 @@ def callback_logic(callback):
                     print('need_ban',need_ban)
                     if 1 in need_ban:
                         if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
-                            bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,
+                            await bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,
                                                   callback.message.id,reply_markup=unblock_keyboard(block_id,
                                                                                                     block_name,None))
             elif str(callback.data).startswith('ban_')  and str(callback.data).endswith("_banlist"):
@@ -464,7 +497,7 @@ def callback_logic(callback):
                 blocklist= add_delete_get_clear_blocked_users(block_id,block_name,callback.message.chat.id,'getall')
                 if len(blocklist)==0:
                     if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
-                          bot.edit_message_text(f'🔒 {block_name} заблокирован(a)\n❌И сообщения от него больше поступать не будут',callback.message.chat.id,callback.message.id,reply_markup=unblock_keyboard(block_id, block_name,True))
+                          await bot.edit_message_text(f'🔒 {block_name} заблокирован(a)\n❌И сообщения от него больше поступать не будут',callback.message.chat.id,callback.message.id,reply_markup=unblock_keyboard(block_id, block_name,True))
                 else:
                     for ban_item in blocklist:
                         if block_id  not in ban_item:
@@ -474,9 +507,9 @@ def callback_logic(callback):
                     print(need_ban)
                     if 1 not in need_ban:
                         if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
-                          bot.edit_message_text(f'🔒 {block_name} заблокирован(a)\n❌И сообщения от него больше поступать не будут',callback.message.chat.id,callback.message.id,reply_markup=unblock_keyboard(block_id, block_name,True))
+                          await bot.edit_message_text(f'🔒 {block_name} заблокирован(a)\n❌И сообщения от него больше поступать не будут',callback.message.chat.id,callback.message.id,reply_markup=unblock_keyboard(block_id, block_name,True))
                         elif     add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')=='2.1':
-                            bot.edit_message_text(
+                            await bot.edit_message_text(
                             f' ⚠️Ошибка! {block_name} уже нет в списке или раннее вы его разблокировали',
                             callback.message.chat.id, callback.message.id,
                             reply_markup=menu_keyboard_2stage(callback.message.from_user.id))
@@ -489,7 +522,7 @@ def callback_logic(callback):
                 # print(unblock_id,unblock_name)
                 blocklist=add_delete_get_clear_blocked_users(unblock_id, unblock_name, callback.message.chat.id, 'getall')
                 if len(blocklist)==0:
-                    bot.edit_message_text(
+                    await bot.edit_message_text(
                         f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения',
                         callback.message.chat.id, callback.message.id,
                         reply_markup=block_keyboard(block_id=unblock_id, block_name=unblock_name, banlist=None))
@@ -499,10 +532,10 @@ def callback_logic(callback):
                         if unblock_id in ban_item:
                             print(unblock_id,'Eсть в списке')
                             if add_delete_get_clear_blocked_users(unblock_id,unblock_name,callback.message.chat.id,'delete')==2 :
-                                bot.edit_message_text(f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения', callback.message.chat.id, callback.message.id,
+                                await bot.edit_message_text(f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения', callback.message.chat.id, callback.message.id,
                             reply_markup=block_keyboard(block_id= unblock_id,block_name= unblock_name,banlist=None))
                         else:
-                            bot.edit_message_text(
+                            await bot.edit_message_text(
                             f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения',
                             callback.message.chat.id, callback.message.id,
                             reply_markup=block_keyboard(block_id=unblock_id, block_name=unblock_name, banlist=None))
@@ -516,21 +549,21 @@ def callback_logic(callback):
                         if unblock_id in ban_item:
                         # print(unblock_id, 'Eсть в списке')
                             if add_delete_get_clear_blocked_users(unblock_id, unblock_name, callback.message.chat.id, 'delete') == 2:
-                                bot.edit_message_text(f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения', callback.message.chat.id, callback.message.id, reply_markup=block_keyboard(block_id=unblock_id,block_name=unblock_name,banlist=True))
+                                await bot.edit_message_text(f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения', callback.message.chat.id, callback.message.id, reply_markup=block_keyboard(block_id=unblock_id,block_name=unblock_name,banlist=True))
 
             elif callback.data=="add_keyword":
-                 add_delete_keyword_handler(callback)
+                await  add_delete_keyword_handler(callback)
             elif callback.data in 'delete_keywords':
-                 kwrd_list_del(callback)
+                await kwrd_list_del(callback)
                  #временная раздача халявы
             elif callback.data == "free_premium":
-                bot.delete_message(callback.message.chat.id, callback.message.id )
+                await bot.delete_message(callback.message.chat.id, callback.message.id )
                 if controling_premium(callback.message.chat.id, True) in [2, 1]:
-                    bot.send_message(callback.message.chat.id, premium_bonus, parse_mode='HTML')
+                   await bot.send_message(callback.message.chat.id, premium_bonus, parse_mode='HTML')
 
             elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepyear'):
                 product_name=callback.data.split('_')[1]
-                bot.edit_message_text(
+                await bot.edit_message_text(
                     'Какие сообщения по товарам получать?',
                     callback.message.chat.id, callback.message.id,parse_mode="HTML",
                     reply_markup=choosing_keyboard_proccess(callback.message.chat.id,'year',callback.data,{f'{product_name}':f'✅'}))
@@ -540,7 +573,7 @@ def callback_logic(callback):
                 # product_name = callback.data.split('_')[1]
                 # product_year = callback.data.split('_')[2]
 
-                bot.edit_message_text(
+                await bot.edit_message_text(
                 # f'Товар: <b>{product_name.capitalize()}</b>✅\n' \
                 # f'Год линейки: {product_year} ✅\n' \
                 # f'Теперь укажите серию, цвет, память ⤵',
@@ -576,7 +609,7 @@ def callback_logic(callback):
                 print(new_choosed_item)
                 if prem_status(callback.message.chat.id)==True:
                     get_add_del_choosed_item(callback.message.chat.id,"add",new_choosed_item)
-                    bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
+                    await bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
                                           callback.message.id,
                                           reply_markup=choosing_keyboard_proccess(callback.message.chat.id,
                                                                                   level='memory',
@@ -586,7 +619,7 @@ def callback_logic(callback):
                     if len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys()))<1:
                         print('проблема',len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys())))
                         get_add_del_choosed_item(callback.message.chat.id, "add", new_choosed_item)
-                        bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
+                        await bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
                                               callback.message.id,
                                               reply_markup=choosing_keyboard_proccess(callback.message.chat.id,
                                                                                       level='memory',
@@ -595,7 +628,7 @@ def callback_logic(callback):
                     else:
                         # bot.edit_message_text(premium_offer, callback.message.chat.id,
                         #                       callback.message.id)
-                        bot.send_message(callback.message.chat.id,premium_offer)
+                        await bot.send_message(callback.message.chat.id,premium_offer)
 
 
                         # else:
@@ -623,26 +656,19 @@ def callback_logic(callback):
                                                 f'_{product_memory}'
                 if to_del in tuple(get_add_del_choosed_item(callback.message.chat.id,"get").keys()):
                     if get_add_del_choosed_item(callback.message.chat.id,"del",to_del)=='deleted':
-                        bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,  callback.message.id,
+                        await bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,  callback.message.id,
                 reply_markup = choosing_keyboard_proccess(callback.message.chat.id,
                                                           level='memory',
                                                           construct=f'construct_{product_name}_{product_year}_stepmemory'))
 
 
+bot.add_custom_filter(asyncio_filters.StateFilter(bot))
 
 
 
 
-if __name__=='__main__':
-    while True :
-        try:
-            bot.polling(non_stop=True)
-        except Exception as E:
-            pass
-        except IndexError as I:
-            pass
-        except ConnectionError as CE:
-           pass
+asyncio.run(bot.polling(non_stop=True))
+
 
 
 

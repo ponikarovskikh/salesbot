@@ -3,7 +3,7 @@ from telebot import *
 from telebot.types import (LabeledPrice,Message,KeyboardButton,ReplyKeyboardMarkup,InlineKeyboardMarkup,
                            PreCheckoutQuery,SuccessfulPayment)
 import config
-from sql import *
+from sqlfile import *
 from keyboards import *
 bot =telebot.TeleBot(token=config.token_GorbushkinService)
 

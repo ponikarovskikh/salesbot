@@ -1,7 +1,7 @@
 from telebot import *
 from telebot.types import *
 from telebot.util import quick_markup
-from sql import *
+from sqlfile import *
 
 
 def example_kb():

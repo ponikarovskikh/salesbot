@@ -365,7 +365,7 @@ def controling_premium(user_id:int,new_premium_status:bool):
                         print('yes')
                         return 3
 
-print( controling_premium(user_id=704718950,new_premium_status=False    ))
+# print( controling_premium(user_id=704718950,new_premium_status=False    ))
 
 
 
