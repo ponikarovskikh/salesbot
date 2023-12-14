@@ -32,17 +32,17 @@ def menu_keyboard_1stage():
 
 def menu_keyboard_2stage(user_id):
     keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    func1 = types.KeyboardButton('Главное меню')
-    func2=types.KeyboardButton('Выбрать товары')
-    func3=types.KeyboardButton('Premium-тариф')
-    func4=types.KeyboardButton('Блок-лист')
-    func5=types.KeyboardButton('Ключевые слова')
-    if getchangeplaystatus(user_id) in [1,'1']:
-        func6=types.KeyboardButton('Продажи на паузу ')
+    # func1 = types.KeyboardButton('Главное меню')
+    func2=types.KeyboardButton('Выбрать товары🕹️')
+    func3=types.KeyboardButton('Premium-тариф🔮')
+    func4=types.KeyboardButton('Блок-лист❌')
+    func5=types.KeyboardButton('Ключевые слова🔍')
+    if getchangeplaystatus(user_id) == 1:
+        func6=types.KeyboardButton('Продажи на паузу ⏸️')
     else:
-        func6= types.KeyboardButton('Возобновить продажи')
-    func7= types.KeyboardButton("FAQ")
-    keyboard.add(func1)
+        func6= types.KeyboardButton('Возобновить продажи▶️')
+    func7= types.KeyboardButton("Руководство📚")
+    # keyboard.add(func1)
     keyboard.row(func2,func3)
     keyboard.row(func4,func5)
     keyboard.row(func6,func7)
@@ -50,7 +50,7 @@ def menu_keyboard_2stage(user_id):
 
 
 
-
+# 🔮🔎🔍📣📢🛡️🔑🗝️▶️⏸️ℹ️⬅️✅🚫❌🎮🕹️↩️
 
 def getfreepremium():
     return quick_markup(
@@ -127,24 +127,24 @@ def block_keyboard(block_id,block_name,banlist=None):
     if banlist==True:
         return quick_markup({
 
-            'Забанить': {'callback_data': f'ban_{block_id}_{block_name}_banlist'},
-            'Назад':{'callback_data': f'banlist_show'}}, row_width=1)
+            'Забанить❌': {'callback_data': f'ban_{block_id}_{block_name}_banlist'},
+            'Назад↩️':{'callback_data': f'banlist_show'}}, row_width=1)
     else:
         return quick_markup({
 
-                'Забанить': {'callback_data': f'ban_{block_id}_{block_name}'}}, row_width=1)
+                'Забанить❌': {'callback_data': f'ban_{block_id}_{block_name}'}}, row_width=1)
 
 def unblock_keyboard(block_id,block_name,banlist=None):
     if banlist == True:
         return quick_markup({
 
             'Разблокировать человека🔑': {'callback_data': f'unban_{block_id}_{block_name}_banlist'},
-            'Назад':{'callback_data': f'banlist_show'}}, row_width=1)
+            'Назад↩️':{'callback_data': f'banlist_show'}}, row_width=1)
 
     else:
         return quick_markup({
 
-            'Разблокировать человека🔑': {'callback_data': f'unban_{block_id}_{block_name}'}}, row_width=1)
+            'Разблокировать🔑': {'callback_data': f'unban_{block_id}_{block_name}'}}, row_width=1)
 
 
 def banlistmarkup(user_id,blocklist):
@@ -307,7 +307,7 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
 
                             print('callback_data', callback_data)
                             buttonsmenumodel.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
-        markup.add(*buttonsmenumodel)
+        markup.add(*buttonsmenumodel,row_width=pos_len)
                             # print(buttons)
         return markup
 
@@ -317,7 +317,7 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
 kybmark = {
     "plus": "+",
     "natural": "🔗",
-    "pro max": "M",
+    "pro max": "PM",
     "pro": "P",
     "yellow": "🍋",
     "green": "☘️",

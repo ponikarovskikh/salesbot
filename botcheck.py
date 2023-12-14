@@ -26,18 +26,21 @@ async def welcome(msg:Message):
             username = msg.from_user.username
             user_id=msg.from_user.id
             chat_id=msg.chat.id
+
             await bot.send_message(msg.chat.id,text=f'Привет, {username}!\n\n{welcome_preview}')
             if add_users_field(user_id, username,chat_id) =='new added':
-                await bot.send_message(msg.chat.id,'Друг, видим что ты впервые у нас ознакомься с функционалом - жми '
-                                               'Продавать товар',reply_markup=menu_keyboard_1stage())
+                await bot.send_message(msg.chat.id,'Так как вы впервые у нас, ознакомьтесь с функционалом в разделе '
+                                                   '</b>Руководство📚</b>'
+                                              ,reply_markup=menu_keyboard_2stage(user_id))
             else:
                await  bot.send_message(msg.chat.id,'Друг, и снова здраствуй!',reply_markup=menu_keyboard_1stage())
 
 # @bot.message_handler(text=['Продавать товар'])
 async def sell(msg:Message):
           await bot.send_message(msg.chat.id,text=f'Вы в разделе продажа товаров.\n\n'
-                                                  f'Сюда будут приходить все сообщения о товарах согласно вашим'
-                                                  f'ключевым словам',
+                                                  f'Сюда будут приходить все сообщения о товарах согласно вашим '
+                                                  f'ключевым словам.\n\n'
+                                                  f'Для ознкаомления работы бота нажмите FAQ',
                             reply_markup=menu_keyboard_2stage(msg.chat.id))
 
 
@@ -238,69 +241,71 @@ async def process_successful_payment(msg: Message):
 async def messagecheck(msg):
         print(msg.text,msg.chat.id,msg.chat.type)
         if msg.chat.type =='private':
-            if out_premium_check(msg.chat.id) in ['skip_prem','skip_notprem']:
-                print( out_premium_check(msg.chat.id))
-                if 'Главное меню' in msg.text:
-                    # print(22)
-                    await bot.send_message(msg.chat.id, text=f'Главное меню:', reply_markup=menu_keyboard_1stage())
-                elif 'Продавать товар' in msg.text:
-                    await sell(msg)
-                    # await bot.send_message(msg.chat.id, text=f'Продавать товар:', reply_markup=menu_keyboard_2stage(msg.chat.id))
-                    # await bot.send_message(msg.chat.id,'продажа')
+            if add_users_field(msg.from_user.id,msg.from_user.username,msg.chat.id)!='new added':
+                if out_premium_check(msg.chat.id) in ['skip_prem','skip_notprem']:
+                    print( out_premium_check(msg.chat.id))
+                    if 'Главное меню' in msg.text:
+                        # print(22)
+                        await bot.send_message(msg.chat.id, text=f'Главное меню:', reply_markup=menu_keyboard_1stage())
+                    elif 'Продавать товар' in msg.text:
+                        await sell(msg)
+                        # await bot.send_message(msg.chat.id, text=f'Продавать товар:', reply_markup=menu_keyboard_2stage(msg.chat.id))
+                        # await bot.send_message(msg.chat.id,'продажа')
 
-                elif 'Блок-лист' in  msg.text:
-                    # bot.send_message(msg.chat.id,'Раздел Блок-лист в разработке')
-                     await block_list_show(msg)
-                elif 'Выбрать товары'in msg.text:
-                    # print("yes")
-                    # bot.send_message(msg.chat.id,'Раздел Выбрать товары в разработке')
-                    await bot.send_message(msg.chat.id, 'Какие сообщения по товарам получать?',
-                                     reply_markup=choosing_keyboard_proccess(msg.chat.id,level='memory'))
-                elif  'Premium-тариф' in msg.text:
-                    if prem_status(msg.chat.id)==True:
-                        await bot.send_message(msg.chat.id,f'Ваш Premium-тариф активен\n\n '
-                                                     f'Осталось {out_premium_check(msg.chat.id,action=True)} дней ',
-                                         reply_markup=menu_keyboard_2stage(
-                                                     msg.chat.id))
+                    elif 'Блок-лист' in  msg.text:
+                        # bot.send_message(msg.chat.id,'Раздел Блок-лист в разработке')
+                         await block_list_show(msg)
+                    elif 'Выбрать товары'in msg.text:
+                        # print("yes")
+                        # bot.send_message(msg.chat.id,'Раздел Выбрать товары в разработке')
+                        await bot.send_message(msg.chat.id, 'Какие сообщения по товарам получать?',
+                                         reply_markup=choosing_keyboard_proccess(msg.chat.id,level='memory'))
+                    elif  'Premium-тариф' in msg.text:
+                        if prem_status(msg.chat.id)==True:
+                            await bot.send_message(msg.chat.id,f'Ваш Premium-тариф активен\n\n '
+                                                         f'Осталось {out_premium_check(msg.chat.id,action=True)} дней ',
+                                             reply_markup=menu_keyboard_2stage(
+                                                         msg.chat.id))
+                        else:
+                            await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
+                            # await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'\n\n⏬⏬Оплатить {msg.from_user.first_name} '\
+                            #                                                f'Premium на '\
+                            #                                                f'30 дней⏬⏬',
+                            #                                                   f'buy_premium'
+                            #                                                                    f'_{msg.from_user.id}',
+                            #                  token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
+                            #         'Купить', 100 * 100)])
+                    elif 'Руководство' in msg.text:
+                        await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
+
+                    elif  'Ключевые слова' in msg.text:
+                          print('кл сл')
+                          await kwrdupdt(msg)
+                    elif  'Продажи на паузу'in msg.text:
+                        getchangeplaystatus(msg.chat.id,action=0)
+                        await bot.send_message(msg.chat.id, 'Продажи приостановлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
+                    elif 'руководство бота' in msg.text.lower():
+                        await  support_handler(msg)
+                        # bot.send_message(msg.chat.id, 'Раздел продажи на паузу в разработке')
+                    elif 'Возобновить продажи' in msg.text:
+                         getchangeplaystatus(msg.chat.id, action=1)
+                         await bot.send_message(msg.chat.id, 'Продажи возобновлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
+                    # elif 'Статистика запросов' in msg.text :
+                    #     # print(msg.chat)
+                    #     bot.send_message(msg.chat.id, 'Раздел Статистика запросов в разработке')
                     else:
-                        await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
-                        # await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'\n\n⏬⏬Оплатить {msg.from_user.first_name} '\
-                        #                                                f'Premium на '\
-                        #                                                f'30 дней⏬⏬',
-                        #                                                   f'buy_premium'
-                        #                                                                    f'_{msg.from_user.id}',
-                        #                  token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
-                        #         'Купить', 100 * 100)])
-                elif 'FAQ' in msg.text:
-                    await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
-
-                elif  'Ключевые слова' in msg.text:
-                      print('кл сл')
-                      await kwrdupdt(msg)
-                elif  'Продажи на паузу'in msg.text:
-                    getchangeplaystatus(msg.chat.id,action=0)
-                    await bot.send_message(msg.chat.id, 'Продажи приостановлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
-                elif 'руководство бота' in msg.text.lower():
-                    await  support_handler(msg)
-                    # bot.send_message(msg.chat.id, 'Раздел продажи на паузу в разработке')
-                elif 'Возобновить продажи' in msg.text:
-                     getchangeplaystatus(msg.chat.id, action=1)
-                     await bot.send_message(msg.chat.id, 'Продажи возобновлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
-                # elif 'Статистика запросов' in msg.text :
-                #     # print(msg.chat)
-                #     bot.send_message(msg.chat.id, 'Раздел Статистика запросов в разработке')
+                         await bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
                 else:
-                     await bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
+                    await bot.send_message(msg.chat.id,'Упс, ваш Premium-период истек.\n\n'
+                                                 'Количество ваших ключевых слов и выбранных товаров сократилось до 1.'
+                                                 '\n\n'
+                                                 'Желаете Продлить ? - кликните на '
+                                                 '<b>Premium-тариф</b>',
+                                     parse_mode='HTML')
+                    await messagecheck(msg=msg)
+
             else:
-                await bot.send_message(msg.chat.id,'Упс, ваш Premium-период истек.\n\n'
-                                             'Количество ваших ключевых слов и выбранных товаров сократилось до 1.'
-                                             '\n\n'
-                                             'Желаете Продлить ? - кликните на '
-                                             '<b>Premium-тариф</b>',
-                                 parse_mode='HTML')
-                await messagecheck(msg=msg)
-
-
+                await welcome(msg)
         if 'group' in msg.chat.type:
             # print(msg)
             #По тех причинам мы не в состоянии связаться с человеком если отсутствует никнейн добавляте себе его и мы
@@ -425,7 +430,10 @@ async def messagecheck(msg):
 
                                 link_text = f"[{sender_username}](https://t.me/{sender_username})\n\n" \
                                             f"{Text}"
-                                await bot.send_message(user_id_to, link_text, parse_mode='Markdown', disable_web_page_preview=True,reply_markup=block_keyboard(sender_id,sender_username,banlist=None))
+                                try:
+                                    await bot.send_message(user_id_to, link_text, parse_mode='Markdown', disable_web_page_preview=True,reply_markup=block_keyboard(sender_id,sender_username,banlist=None))
+                                except Exception as e:
+                                    pass
                                 break
                                 pass
                     # else:
@@ -523,7 +531,7 @@ async def callback_logic(callback):
                 blocklist=add_delete_get_clear_blocked_users(unblock_id, unblock_name, callback.message.chat.id, 'getall')
                 if len(blocklist)==0:
                     await bot.edit_message_text(
-                        f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения',
+                        f'✅ {unblock_name} разблокирован(a)',
                         callback.message.chat.id, callback.message.id,
                         reply_markup=block_keyboard(block_id=unblock_id, block_name=unblock_name, banlist=None))
                 else:
@@ -532,11 +540,11 @@ async def callback_logic(callback):
                         if unblock_id in ban_item:
                             print(unblock_id,'Eсть в списке')
                             if add_delete_get_clear_blocked_users(unblock_id,unblock_name,callback.message.chat.id,'delete')==2 :
-                                await bot.edit_message_text(f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения', callback.message.chat.id, callback.message.id,
+                                await bot.edit_message_text(f'✅ {unblock_name} разблокирован(a)', callback.message.chat.id, callback.message.id,
                             reply_markup=block_keyboard(block_id= unblock_id,block_name= unblock_name,banlist=None))
                         else:
                             await bot.edit_message_text(
-                            f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения',
+                            f'✅ {unblock_name} разблокирован(a)',
                             callback.message.chat.id, callback.message.id,
                             reply_markup=block_keyboard(block_id=unblock_id, block_name=unblock_name, banlist=None))
             elif str(callback.data).startswith('unban_') and str(callback.data).endswith("_banlist"):

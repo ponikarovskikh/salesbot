@@ -22,7 +22,7 @@ def createtable_users():
     conn.commit()
     conn.close()
 
-def add_users_field(user_id,username,chat_id):
+def add_users_field(user_id,username=None,chat_id=None):
     conn = sqlite3.connect('bot_db.db')
     cursor=conn.cursor()
     cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
@@ -39,7 +39,7 @@ def add_users_field(user_id,username,chat_id):
         return 'new added'
 
     else:
-        conn.close()
+
         return 'already exists'
 
 def get_blocked_users(user_id:int,action:str):
@@ -152,14 +152,14 @@ def add_delete_keyword(user_id:int,keyword=None,action:str=None):
             if premium is True :
                 print(1)
                 keywords.append(keyword)
-                keywords=json.dumps(keywords)
+                keywords=json.dumps(keywords,ensure_ascii=False)
                 cursor.execute('UPDATE users SET keywords = ? WHERE user_id = ?', (keywords, user_id))
                 conn.commit()
                 return 'added'
             else:
                 if len(keywords) == 0 :
                     keywords.append(keyword)
-                    keywords = json.dumps(keywords)
+                    keywords = json.dumps(keywords,ensure_ascii=False)
                     cursor.execute('UPDATE users SET keywords = ? WHERE user_id = ?', (keywords, user_id))
                     conn.commit()
                     return 'added'
@@ -178,7 +178,7 @@ def add_delete_keyword(user_id:int,keyword=None,action:str=None):
     elif action == 'clear_list':
         print('clear')
         keywords=[]
-        keywords = json.dumps(keywords)
+        keywords = json.dumps(keywords,ensure_ascii=False)
         cursor.execute('UPDATE users SET keywords = ? WHERE user_id = ?', (keywords, user_id))
         conn.commit()
         print('keywords_cleear')
@@ -193,7 +193,7 @@ def add_delete_keyword(user_id:int,keyword=None,action:str=None):
                 first_key=keywords[0]
                 keywords.clear()
                 keywords.append(first_key)
-                keywords = json.dumps(keywords)
+                keywords = json.dumps(keywords,ensure_ascii=False)
                 cursor.execute('UPDATE users SET keywords = ? WHERE user_id = ?', (keywords, user_id))
                 conn.commit()
                 return '1remain'
@@ -423,7 +423,7 @@ def getchangeplaystatus(user_id=None,action=None):
     cursor.execute('SELECT play FROM users WHERE user_id = ?', (user_id,))
     result = cursor.fetchone()
     if action=='get' or action is None :
-        return result[0]
+        return int(result[0])
     elif action == 1 and result[0]==0:
         cursor.execute('UPDATE users SET play = ?WHERE user_id = ?',
                        (1, user_id))
