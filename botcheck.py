@@ -38,7 +38,7 @@ async def clientside(bot):
                 await bot.send_message(msg.chat.id,text=f'Привет, {username}!\n\n{welcome_preview}')
                 if add_users_field(user_id, username,chat_id) =='new added':
                     await bot.send_message(msg.chat.id,'Так как вы впервые у нас, ознакомьтесь с функционалом в разделе '
-                                                       '</b>Руководство📚</b>'
+                                                       '<b>Руководство📚</b>'
                                                   ,reply_markup=menu_keyboard_2stage(user_id))
                 else:
                    await  bot.send_message(msg.chat.id,'Друг, и снова здраствуй!',reply_markup=menu_keyboard_1stage())
@@ -48,7 +48,7 @@ async def clientside(bot):
               await bot.send_message(msg.chat.id,text=f'Вы в разделе продажа товаров.\n\n'
                                                       f'Сюда будут приходить все сообщения о товарах согласно вашим '
                                                       f'ключевым словам.\n\n'
-                                                      f'Для ознкаомления работы бота нажмите FAQ',
+                                                      f'Для ознкаомления работы бота нажмите Руководство',
                                 reply_markup=menu_keyboard_2stage(msg.chat.id))
 
 
@@ -697,7 +697,7 @@ async def serverside(app):
         await asyncio.sleep(interval)
         try:
             await app.send_message(chat_id=chat_id, text=text)
-            task_list.remove(send_message_with_interval(app,chat_id,text,interval))
+
         except Exception as e:
             task_list.append(send_message_with_interval(app,chat_id,text,interval))
 
@@ -720,7 +720,7 @@ async def serverside(app):
                             # print(message.text)
 
                                 task_list.append(send_message_with_interval(app, -1001869659170,
-                                f'set_@_{user_id}_@_{usrnm}_@_set{CANAL}\n\n{message.text}', 3))
+                                f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 3))
 
 
 
@@ -735,18 +735,22 @@ async def serverside(app):
 async def checking ():
     global wait_seconds
     wait_seconds=1
+    first_len=0
     while True:
         from pyrogram.errors.exceptions.flood_420 import FloodWait
+        first_len = len(task_list)
 
-        await asyncio.sleep(1)
+
+        await asyncio.sleep(5)
         print('таски=',task_list,len(task_list))
-        if len(task_list)>=5:
+
+        if len(task_list)>5 or first_len==len(task_list) or len(task_list)-first_len<4 :
             for task in task_list.copy():
                 await asyncio.sleep(wait_seconds)
                 try:
-                       await task
-
-                       wait_seconds=1
+                        await task
+                        task_list.remove(task)
+                        wait_seconds=1
 
                 except Exception as error_message:
                     pass
@@ -769,23 +773,6 @@ async def checking ():
                     # error_message = 'Telegram says: [420 FLOOD_WAIT_X] - A wait of 55 seconds is required (caused by "messages.SendMessage")'
                     # wait_seconds = await extract_flood_wait_seconds(error_message)
                     # print(wait_seconds)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             print("done")
 
