@@ -695,8 +695,11 @@ async def serverside(app):
     async def send_message_with_interval(app, chat_id, text, interval):
 
         await asyncio.sleep(interval)
-        await app.send_message(chat_id=chat_id, text=text)
-
+        try:
+            await app.send_message(chat_id=chat_id, text=text)
+            task_list.remove(send_message_with_interval(app,chat_id,text,interval))
+        except Exception as e:
+            task_list.append(send_message_with_interval(app,chat_id,text,interval))
 
 
     @app.on_message()
@@ -717,7 +720,7 @@ async def serverside(app):
                             # print(message.text)
 
                                 task_list.append(send_message_with_interval(app, -1001869659170,
-                                f'set_@_{user_id}_@_{usrnm}_@_set{CANAL}\n\n{message.text}', 2))
+                                f'set_@_{user_id}_@_{usrnm}_@_set{CANAL}\n\n{message.text}', 3))
 
 
 
@@ -742,30 +745,30 @@ async def checking ():
                 await asyncio.sleep(wait_seconds)
                 try:
                        await task
-                       task_list.remove(task)
+
                        wait_seconds=1
 
                 except Exception as error_message:
-                    print(error_message)
-                    async def extract_flood_wait_seconds(error_message):
-                        # Паттерн для поиска числа (количество секунд) в сообщении об ожидании
-                        pattern = r'A wait of (\d+) seconds is required'
-
-                        # Поиск совпадений в сообщении об ошибке
-                        match = re.search(pattern, error_message)
-
-                        if match:
-                            # Извлечение числа из совпадения и преобразование в int
-                            seconds = int(match.group(1))
-                            return seconds
-                        else:
-                            # Если совпадения не найдены, вернуть None или другое значение по умолчанию
-                            return None
+                    pass
+                    # async def extract_flood_wait_seconds(error_message):
+                    #     # Паттерн для поиска числа (количество секунд) в сообщении об ожидании
+                    #     pattern = r'A wait of (\d+) seconds is required'
+                    #
+                    #     # Поиск совпадений в сообщении об ошибке
+                    #     match = re.search(pattern, error_message)
+                    #
+                    #     if match:
+                    #         # Извлечение числа из совпадения и преобразование в int
+                    #         seconds = int(match.group(1))
+                    #         return seconds
+                    #     else:
+                    #         # Если совпадения не найдены, вернуть None или другое значение по умолчанию
+                    #         return None
 
                     # Пример использования
                     # error_message = 'Telegram says: [420 FLOOD_WAIT_X] - A wait of 55 seconds is required (caused by "messages.SendMessage")'
-                    wait_seconds = await extract_flood_wait_seconds(error_message)
-                    print(wait_seconds)
+                    # wait_seconds = await extract_flood_wait_seconds(error_message)
+                    # print(wait_seconds)
 
 
 
