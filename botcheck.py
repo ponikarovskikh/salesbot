@@ -429,7 +429,7 @@ async def clientside(bot):
                             sender_username = msg.from_user.username
                             sender_id = msg.from_user.id
                         print()
-                        if 0 not in need_send or (0 in need_send and guarantee>=3):
+                        if 0 not in need_send or (0 in need_send and guarantee>=2):
                             # if user_id_to!=int(sender_id):
                                 if getchangeplaystatus(user_id_to,action='get')!=0:
 
