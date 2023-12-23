@@ -215,8 +215,8 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
     elif level=='memory':
         choosed_items=get_add_del_choosed_item(user_id,'get')
         choosed_items=tuple(choosed_items.keys())
-        print('chosed',choosed_items)
-        print('memo')
+        # print('chosed',choosed_items)
+        # print('memo')
         markup = types.InlineKeyboardMarkup(row_width=3)
         # print(construct)
         if construct is not None:
@@ -226,8 +226,8 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
             year_choice=new_clbck.split('_')[2]
             years = productlist[product_choice]
             models = productlist[product_choice][year_choice]
-            print(year_choice)
-            print(product_choice)
+            # print(year_choice)
+            # print(product_choice)
         else:
             product_choice='iphone'
             year_choice='2023'
@@ -256,7 +256,7 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
                 callback_data = f'construct_{product_choice}_{year.lower()}_stepmemory'
                 buttonsmenuyear.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
         markup.add(*buttonsmenuyear,row_width=len(buttonsmenuyear))
-        print(*buttonsmenuyear)
+        # print(*buttonsmenuyear)
         buttonsmenumodel=[]
 
         for model in models.keys():
@@ -303,9 +303,9 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
 
 
                             # kbid=f'iph{id}'
-                            print('button_text',button_text)
+                            # print('button_text',button_text)
 
-                            print('callback_data', callback_data)
+                            # print('callback_data', callback_data)
                             buttonsmenumodel.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
         markup.add(*buttonsmenumodel,row_width=pos_len)
                             # print(buttons)

@@ -107,11 +107,11 @@ async def clientside(bot):
     @bot.message_handler(state=SuperStates.getkeyword)
     async def add_new_keyword(msg:Message):
 
-            print('state slovil')
+
 
             if '\n' in msg.text:
                 newkeywordslist=msg.text.lower().split('\n')
-                print(newkeywordslist)
+                # print(newkeywordslist)
                 newkeyword=[]
                 for keyword in newkeywordslist:
                     newkeyword=keyword.split(' ')
@@ -365,15 +365,15 @@ async def clientside(bot):
                 # кортеж из юзера нашего бота и его ключевых слов ,теперь включая все слова, которые в разделе выбор
                 # товаров
                 checkinglist = users_and_keywords_list(access_sending,users_and_keywords)
-                print('кого и по чему проверка',checkinglist)
+                # print('кого и по чему проверка',checkinglist)
 
                 # начало проверки
                 for user_keys in checkinglist:
 
                     user_id_to=int(user_keys[0])
                     keywords_check=user_keys[1]
-                    print(user_id_to)
-                    print('список проверяемых слов ',keywords_check)
+                    # print(user_id_to)
+                    # print('список проверяемых слов ',keywords_check)
 
                     with open('IPHONE_LIST.json', 'r') as f:
                         productlist = json.load(f)
@@ -400,7 +400,7 @@ async def clientside(bot):
 
 
 
-                    # print(priorities_model)
+
                     # print(priorities_color)
                     # print(priorities_memories)
 
@@ -409,11 +409,11 @@ async def clientside(bot):
 
 
                     for kwrd in keywords_check:
-                        print('clovo',kwrd)
+                        # print('clovo',kwrd)
                         need_send = []
                         guarantee=0
                         for key in kwrd:
-                            print('elslova',key)
+                            # print('elslova',key)
                             if str(key).lower() in  message_correct.lower():
 
                                 need_send.append(1)
@@ -429,7 +429,7 @@ async def clientside(bot):
                             sender_username = msg.from_user.username
                             sender_id = msg.from_user.id
                         print()
-                        if 0 not in need_send or (0 in need_send and guarantee>=2):
+                        if 0 not in need_send or (0 in need_send and guarantee>2):
                             # if user_id_to!=int(sender_id):
                                 if getchangeplaystatus(user_id_to,action='get')!=0:
 
@@ -614,6 +614,7 @@ async def clientside(bot):
 
 
                     if product_spec == 'orig':
+
                                 new_choosed_item = {f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'
                                                     f'_{product_memory}':[
                                     product_name,product_model,product_color,product_memory]}
@@ -687,7 +688,8 @@ async def clientside(bot):
 
 async def serverside(app):
     print('pfgeo')
-
+    chat_ids = [-4072428698, -4031254072, -4083501160, -4019238383, -4049269047, -4015184211, -4090160019, -4057419504,
+                -4081423618, -4045433379, -1001869659170]
 
     # Замените "TARGET_GROUP" на username или ID вашей группы
     # TARGET_GROUP = "-1001946865525"
@@ -704,22 +706,28 @@ async def serverside(app):
 
     @app.on_message()
     async def forward_to_private_chat(app, message):
+        chat_ids = [-1001995766142, -1002018161709, -1002091805379, -1001869659170, -1002101187519, -1002011356796, -1001995187845, -1002057441036, -1002049302049, -1002014932385, -1002060439501]
 
-        if int(message.from_user.id)!=6724529493:
-            if int(message.chat.id) != -1001869659170:
+        if int(message.from_user.id)!=6724529493:#огузок
+            if int(message.chat.id) not in chat_ids:
                 CANAL=message.chat.title
                 user_id=message.from_user.id
                 text=message.text
                 resolve=json.loads  (str(message.from_user))
 
                 if 'username' in resolve.keys():
-                    if 'bot' not in text.lower() and "True"  not in str(resolve['is_bot']):
+                    if 'bot' not in text.lower() :
                         usrnm = message.from_user.username
-                        if any(keyword in text.lower() for keyword in ['куплю', 'предложите', 'ищу','?']):
+                        if any(keyword in text.lower() for keyword in ['куплю', 'предложите', 'ищу','?','купить',
+                                                                       'buy','ищу']):
                             # print('-------------\n',resolve['username'])
                             # print(message.text)
+                            random.shuffle(chat_ids)
 
-                                task_list.append(send_message_with_interval(app, -1001869659170,
+                            # Выбираем случайный элемент из перемешанного списка
+                            random_chat_id = int(chat_ids[0])
+
+                            task_list.append(send_message_with_interval(app,  random_chat_id,
                                 f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 3))
 
 
