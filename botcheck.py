@@ -14,7 +14,7 @@ from pyrogram import Client
 
 global app
 global bot
-
+last_message_len=0
 
 async def clientside(bot):
     class SuperStates(STSGR):
@@ -56,7 +56,7 @@ async def clientside(bot):
 
     @bot.message_handler(commands=['support'])
     async def  support_handler(msg:Message):
-        print('support')
+        # print('support')
         if msg.chat.type == 'private':
             await  bot.send_message(msg.chat.id, text=support_info, parse_mode='HTML',reply_markup=menu_keyboard_2stage(
                 msg.chat.id))
@@ -76,7 +76,7 @@ async def clientside(bot):
             if msg.chat.type=='private':
                 keywords= get_user_and_keywords(msg.from_user.id)
 
-                print(keywords)
+                # print(keywords)
 
                 if len(keywords)==0:
                    await  bot.send_message(msg.chat.id,'💥🔦 <b>Мои ключевые слова</b>\n\nВ данный момент у тебя нет ключевых '
@@ -99,7 +99,7 @@ async def clientside(bot):
                                   , callback.message.chat.id, callback.message.id,
                                   parse_mode='HTML')
             await bot.send_message(callback.message.chat.id,'И затем жми отправить')
-            print(callback.from_user.id, callback.message.chat.id)
+            # print(callback.from_user.id, callback.message.chat.id)
             # await bot.register_next_step_handler(callback.message,add_new_keyword)
             await bot.set_state(chat_id=callback.from_user.id,state=SuperStates.getkeyword,user_id=
                                               callback.message.chat.id)
@@ -139,7 +139,7 @@ async def clientside(bot):
 
     @bot.message_handler(commands=['keywordslist_clear'])
     async def kwrd_list_del(callback):
-        print('pltcm')
+        # print('pltcm')
         if callback.message.chat.type == 'group':
             pass
         else:
@@ -156,9 +156,9 @@ async def clientside(bot):
             if msg.chat.type=='group':
                 pass
             else:
-                print(msg.message_id)
+                # print(msg.message_id)
                 blocklist=add_delete_get_clear_blocked_users(user_id=msg.from_user.id,action='getall')
-                print(len(blocklist))
+                # print(len(blocklist))
                 if len(blocklist)==0:
                          await bot.send_message(msg.chat.id,'⛔ Заблокированные люди\n\nУпс,список пока пуст',reply_markup=menu_keyboard_2stage(msg.chat.id))
 
@@ -187,7 +187,7 @@ async def clientside(bot):
 
     @bot.pre_checkout_query_handler(func=lambda query: True)
     async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
-        print(pre_checkout_query)
+        # print(pre_checkout_query)
         await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,error_message='Что-то не так')
 
 
@@ -203,7 +203,7 @@ async def clientside(bot):
 
         elif str(msg.from_user.id).lower()  not in str(msg.successful_payment.invoice_payload):
             user_pay=str(msg.successful_payment.invoice_payload)[12:]
-            print(user_pay)
+            # print(user_pay)
             if controling_premium(user_pay, new_premium_status=True) == 2:
                 await bot.send_message(msg.chat.id, premium_purchase_ok,
                                  parse_mode='HTML')
@@ -247,11 +247,11 @@ async def clientside(bot):
     #     чекать все смс из чатов
     @bot.message_handler(func=lambda msg:Message )
     async def messagecheck(msg):
-            print(msg.text,msg.chat.id,msg.chat.type)
+            # print(msg.text,msg.chat.id,msg.chat.type)
             if msg.chat.type =='private':
                 if add_users_field(msg.from_user.id,msg.from_user.username,msg.chat.id)!='new added':
                     if out_premium_check(msg.chat.id) in ['skip_prem','skip_notprem']:
-                        print( out_premium_check(msg.chat.id))
+                        # print( out_premium_check(msg.chat.id))
                         if 'Главное меню' in msg.text:
                             # print(22)
                             await bot.send_message(msg.chat.id, text=f'Главное меню:', reply_markup=menu_keyboard_1stage())
@@ -287,7 +287,7 @@ async def clientside(bot):
                             await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
 
                         elif  'Ключевые слова' in msg.text:
-                              print('кл сл')
+                              # print('кл сл')
                               await kwrdupdt(msg)
                         elif  'Продажи на паузу'in msg.text:
                             getchangeplaystatus(msg.chat.id,action=0)
@@ -321,10 +321,10 @@ async def clientside(bot):
 
 
                 Text = msg.text
-                print("Text-",Text)
+                # print("Text-",Text)
                 sender_id = msg.from_user.id
                 sender_username = msg.from_user.username
-                print('sender_id sender_username',sender_id,sender_username)
+                # print('sender_id sender_username',sender_id,sender_username)
                 crdtl = 'None'
                 if ("_@_set") in Text:
                     crdtl = Text[Text.index('set_@_'):Text.index('_@_set') + 6]
@@ -337,7 +337,7 @@ async def clientside(bot):
                     print("_@_set not in Text" )
 
                 message_correct=Text.lower()
-                print('сооьщ до полного перевода на англ',message_correct)
+                # print('сооьщ до полного перевода на англ',message_correct)
                 message_correct=message_correct.split(' ')
                 # print(message_correct)
                 for item in message_correct:
@@ -346,22 +346,22 @@ async def clientside(bot):
                         message_correct.insert(message_correct.index(item),russiandict[item])
                         message_correct.remove(item)
                 message_correct=' '.join(message_correct)
-                print('а теперь после полного преервода',message_correct)
+                # print('а теперь после полного преервода',message_correct)
                 users_and_keywords=[]
                 def users_and_keywords_list(access_sending:tuple,users_and_keywords:list):
                     for user_id in  access_sending:
-                        print(user_id)
+                        # print(user_id)
                         userkwrd=get_user_and_keywords(user_id,checking=True)
-                        print(userkwrd)
+                        # print(userkwrd)
                         users_and_keywords.append(userkwrd)
-                        print('сейчас в польз и их словах ==',users_and_keywords)
-                    print(users_and_keywords)
+                        # print('сейчас в польз и их словах ==',users_and_keywords)
+                    # print(users_and_keywords)
                     return tuple(users_and_keywords)
 
 
                 # проверяем sender на наличие хоть у кого то в банлисте и высылаем список  тех у кого у он не в бане
                 access_sending = get_users_without_sendusermsg_in_blocklist(sender_id)
-                print('наши пользователи у которых отправитель не найден в блок листе ',access_sending)
+                # print('наши пользователи у которых отправитель не найден в блок листе ',access_sending)
                 # кортеж из юзера нашего бота и его ключевых слов ,теперь включая все слова, которые в разделе выбор
                 # товаров
                 checkinglist = users_and_keywords_list(access_sending,users_and_keywords)
@@ -423,18 +423,18 @@ async def clientside(bot):
                                 # if str(key).lower() not in priorities:
                                     need_send.append(0)
 
-                        print(need_send,guarantee,message_correct,user_id_to)
+                        # print(need_send,guarantee,message_correct,user_id_to)
                         # print(need_send,not_need,sender_id,user_id_to)
                         if sender_username == 0 and sender_id == 0:
                             sender_username = msg.from_user.username
                             sender_id = msg.from_user.id
-                        print()
+                        # print()
                         if 0 not in need_send or (0 in need_send and guarantee>2):
                             # if user_id_to!=int(sender_id):
                                 if getchangeplaystatus(user_id_to,action='get')!=0:
 
-                                    print("sender_username:",sender_username,"      sender_id",sender_id,'  user_id_to',
-                                          user_id_to)
+                                    # print("sender_username:",sender_username,"      sender_id",sender_id,'  user_id_to',
+                                          # user_id_to)
 
                                     link_text = f"[{sender_username}](https://t.me/{sender_username})\n\n" \
                                                 f"{Text}"
@@ -481,14 +481,14 @@ async def clientside(bot):
                                                 callback.message.id, reply_markup=banlistmarkup(callback.message.chat.id,blocklist))
 
                 elif str(callback.data).startswith('ban_') and not str(callback.data).endswith("_banlist"):
-                    print("ban")
+                    # print("ban")
                     clback=callback.data.split('_')
-                    print(clback)
+                    # print(clback)
                     block_id = int(clback[1])
                     block_name=clback[2]
                     need_ban=[]
                     blocklist=add_delete_get_clear_blocked_users(block_id, block_name, callback.message.chat.id, 'getall')
-                    print(blocklist)
+                    # print(blocklist)
                     if len(blocklist)==0:
                         if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
                              await bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,callback.message.id,reply_markup=unblock_keyboard(block_id, block_name,None))
@@ -498,14 +498,14 @@ async def clientside(bot):
                                 need_ban.append(1)
                             else :
                                 need_ban.append(0)
-                        print('need_ban',need_ban)
-                        if 1 in need_ban:
+                        # print('need_ban',need_ban)
+                        if 0 not in need_ban:
                             if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
                                 await bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,
                                                       callback.message.id,reply_markup=unblock_keyboard(block_id,
                                                                                                         block_name,None))
                 elif str(callback.data).startswith('ban_')  and str(callback.data).endswith("_banlist"):
-                    print("ban_banlist")
+                    # print("ban_banlist")
                     clback=callback.data.split('_')
                     block_id = int(clback[1])
                     block_name=clback[2]
@@ -520,7 +520,7 @@ async def clientside(bot):
                                 need_ban.append(0)
                             else :
                                 need_ban.append(1)
-                        print(need_ban)
+                        # print(need_ban)
                         if 1 not in need_ban:
                             if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
                               await bot.edit_message_text(f'🔒 {block_name} заблокирован(a)\n❌И сообщения от него больше поступать не будут',callback.message.chat.id,callback.message.id,reply_markup=unblock_keyboard(block_id, block_name,True))
@@ -531,7 +531,7 @@ async def clientside(bot):
                                 reply_markup=menu_keyboard_2stage(callback.message.from_user.id))
 
                 elif str(callback.data).startswith('unban_') and not str(callback.data).endswith("_banlist"):
-                    print('unban 1')
+                    # print('unban 1')
                     clback = callback.data.split('_')
                     unblock_id = int(clback[1])
                     unblock_name = clback[2]
@@ -544,9 +544,9 @@ async def clientside(bot):
                             reply_markup=block_keyboard(block_id=unblock_id, block_name=unblock_name, banlist=None))
                     else:
                         for ban_item in add_delete_get_clear_blocked_users(unblock_id,unblock_name,callback.message.chat.id,'getall'):
-                            print('1====')
+                            # print('1====')
                             if unblock_id in ban_item:
-                                print(unblock_id,'Eсть в списке')
+                                # print(unblock_id,'Eсть в списке')
                                 if add_delete_get_clear_blocked_users(unblock_id,unblock_name,callback.message.chat.id,'delete')==2 :
                                     await bot.edit_message_text(f'✅ {unblock_name} разблокирован(a)', callback.message.chat.id, callback.message.id,
                                 reply_markup=block_keyboard(block_id= unblock_id,block_name= unblock_name,banlist=None))
@@ -598,11 +598,11 @@ async def clientside(bot):
                     reply_markup = choosing_keyboard_proccess(callback.message.chat.id, 'memory', callback.data))
 
                 elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_add'):
-                    print(callback.data)
+                    # print(callback.data)
                     product_name = callback.data.split('_')[1]
                     product_year = callback.data.split('_')[2]
                     product_model=callback.data.split('_')[3]
-                    print(product_name,product_year,product_model)
+                    # print(product_name,product_year,product_model)
 
                     product_spec = callback.data.split('_')[4]
                     product_color=callback.data.split('_')[5]
@@ -623,7 +623,7 @@ async def clientside(bot):
                                 new_choosed_item = {f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'
                                                     f'_{product_memory}':[
                                     product_name,product_model,product_spec,product_color,product_memory]}
-                    print(new_choosed_item)
+                    # print(new_choosed_item)
                     if prem_status(callback.message.chat.id)==True:
                         get_add_del_choosed_item(callback.message.chat.id,"add",new_choosed_item)
                         await bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
@@ -634,7 +634,7 @@ async def clientside(bot):
 
                     else:
                         if len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys()))<1:
-                            print('проблема',len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys())))
+                            # print('проблема',len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys())))
                             get_add_del_choosed_item(callback.message.chat.id, "add", new_choosed_item)
                             await bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
                                                   callback.message.id,
@@ -658,7 +658,7 @@ async def clientside(bot):
 
 
                 elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_delete'):
-                    print(callback.data)
+                    # print(callback.data)
                     product_name = callback.data.split('_')[1]
                     product_year = callback.data.split('_')[2]
                     product_model = callback.data.split('_')[3]
@@ -687,9 +687,8 @@ async def clientside(bot):
 
 
 async def serverside(app):
-    print('pfgeo')
-    chat_ids = [-4072428698, -4031254072, -4083501160, -4019238383, -4049269047, -4015184211, -4090160019, -4057419504,
-                -4081423618, -4045433379, -1001869659170]
+    # print('pfgeo')
+
 
     # Замените "TARGET_GROUP" на username или ID вашей группы
     # TARGET_GROUP = "-1001946865525"
@@ -712,23 +711,30 @@ async def serverside(app):
             if int(message.chat.id) not in chat_ids:
                 CANAL=message.chat.title
                 user_id=message.from_user.id
-                text=message.text
-                resolve=json.loads  (str(message.from_user))
+                text=str(message.text).lower()
+                resolve=json.loads(str(message.from_user))
+                global last_message_len
+                # print(last_message_len)
+                if last_message_len==len(text):
+                    # print('equal')
+                    pass
+                else:
 
-                if 'username' in resolve.keys():
-                    if 'bot' not in text.lower() :
-                        usrnm = message.from_user.username
-                        if any(keyword in text.lower() for keyword in ['куплю', 'предложите', 'ищу','?','купить',
-                                                                       'buy','ищу']):
-                            # print('-------------\n',resolve['username'])
-                            # print(message.text)
-                            random.shuffle(chat_ids)
+                    if 'username' in resolve.keys():
+                            if 'bot' not in text :
+                                usrnm = message.from_user.username
+                                if any(keyword in text for keyword in ['куплю', 'предложите', 'ищу','?','купить',
+                                                                               'buy','ищу']):
+                                    # print('-------------\n',resolve['username'])
+                                    # print(message.text)
+                                    random.shuffle(chat_ids)
 
-                            # Выбираем случайный элемент из перемешанного списка
-                            random_chat_id = int(chat_ids[0])
+                                    # Выбираем случайный элемент из перемешанного списка
+                                    random_chat_id = int(chat_ids[0])
 
-                            task_list.append(send_message_with_interval(app,  random_chat_id,
-                                f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 3))
+                                    task_list.append(send_message_with_interval(app,  random_chat_id,
+                                        f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 0.1))
+                                    last_message_len=len(text)
 
 
 
@@ -750,7 +756,7 @@ async def checking ():
 
 
         await asyncio.sleep(5)
-        print('таски=',task_list,len(task_list))
+        # print('таски=',task_list,len(task_list))
 
         if len(task_list)>5 or first_len==len(task_list) or len(task_list)-first_len<4 :
             for task in task_list.copy():
@@ -760,34 +766,15 @@ async def checking ():
                         task_list.remove(task)
                         wait_seconds=1
 
-                except Exception as error_message:
+                except Exception :
                     pass
-                    # async def extract_flood_wait_seconds(error_message):
-                    #     # Паттерн для поиска числа (количество секунд) в сообщении об ожидании
-                    #     pattern = r'A wait of (\d+) seconds is required'
-                    #
-                    #     # Поиск совпадений в сообщении об ошибке
-                    #     match = re.search(pattern, error_message)
-                    #
-                    #     if match:
-                    #         # Извлечение числа из совпадения и преобразование в int
-                    #         seconds = int(match.group(1))
-                    #         return seconds
-                    #     else:
-                    #         # Если совпадения не найдены, вернуть None или другое значение по умолчанию
-                    #         return None
 
-                    # Пример использования
-                    # error_message = 'Telegram says: [420 FLOOD_WAIT_X] - A wait of 55 seconds is required (caused by "messages.SendMessage")'
-                    # wait_seconds = await extract_flood_wait_seconds(error_message)
-                    # print(wait_seconds)
 
-            print("done")
 
 async def main():
     global task_list
     task_list=[]
-    app = Client("salesbot")
+    app = Client("salesbot")#зменить
     bot = AsyncTeleBot(token=token_GorbushkinService,
                        state_storage=STM())
 

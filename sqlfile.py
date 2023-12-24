@@ -47,9 +47,9 @@ def get_blocked_users(user_id:int,action:str):
     cursor = conn.cursor()
     cursor.execute('SELECT blocklist FROM users WHERE user_id = ?', (user_id,))
     result = cursor.fetchone()
-    print('get_blocked_users=',result)
+    # print('get_blocked_users=',result)
     if result is not None:
-        print(1,'Длина',len(result[0]))
+        # print(1,'Длина',len(result[0]))
         if action =='len':
             blocklist = json.loads(result[0])
             if blocklist=={}:
@@ -84,10 +84,10 @@ def add_delete_get_clear_blocked_users(block_id:int=0,block_name:str=None, user_
             #'user has been banned'
             return 1
         elif action=='delete':
-            print(4)
+            # print(4)
             # Преобразование строки JSON в объект Python (в данном случае, в список)
             blocklist.pop(str(block_id))
-            print(blocklist)
+            # print(blocklist)
             blocklist = json.dumps(blocklist,ensure_ascii=False)
             cursor.execute('UPDATE users SET blocklist = ? WHERE user_id = ?', (blocklist, user_id))
             conn.commit()
@@ -97,7 +97,7 @@ def add_delete_get_clear_blocked_users(block_id:int=0,block_name:str=None, user_
             # print(blocklist)
 
             blocklist_tuple=tuple( (int(id[0]),str(id[1])) for id in blocklist.items())
-            print(blocklist_tuple)
+            # print(blocklist_tuple)
             return blocklist_tuple
         elif action=='clear':
             blocklist={}
@@ -132,7 +132,7 @@ def get_users_and_keywords():
     # Создание словаря
     user_keywords_dict = {user_id: keywords for user_id, keywords in rows}
     conn.commit()
-    print(user_keywords_dict)
+    # print(user_keywords_dict)
 
 # get_users_and_keywords()
 # добавить слово для пользователя в формате списка для каждого пользователя соответственоо
@@ -142,15 +142,15 @@ def add_delete_keyword(user_id:int,keyword=None,action:str=None):
     cursor = conn.cursor()
     cursor.execute('SELECT keywords,keywords_limit,premium FROM users WHERE user_id = ?', (user_id,))
     result=cursor.fetchone()
-    print(result)
+    # print(result)
     if action=='add':
         if len(result)>0:
             keywords = json.loads(result[0])
             keywords_limit=int(result[1])
             premium=bool(result[2])
-            print(keywords,keywords_limit,premium)
+            # print(keywords,keywords_limit,premium)
             if premium is True :
-                print(1)
+                # print(1)
                 keywords.append(keyword)
                 keywords=json.dumps(keywords,ensure_ascii=False)
                 cursor.execute('UPDATE users SET keywords = ? WHERE user_id = ?', (keywords, user_id))
@@ -176,19 +176,19 @@ def add_delete_keyword(user_id:int,keyword=None,action:str=None):
     #     conn.commit()
     #     return 'word was deleted'
     elif action == 'clear_list':
-        print('clear')
+        # print('clear')
         keywords=[]
         keywords = json.dumps(keywords,ensure_ascii=False)
         cursor.execute('UPDATE users SET keywords = ? WHERE user_id = ?', (keywords, user_id))
         conn.commit()
-        print('keywords_cleear')
+        # print('keywords_cleear')
         return 'keywords_clear'
     elif action =='1remain':
         if len(result)>0:
             keywords = json.loads(result[0])
             keywords_limit=0
             premium=bool(result[2])
-            print(keywords,keywords_limit,premium)
+            # print(keywords,keywords_limit,premium)
             if len(keywords)>1:
                 first_key=keywords[0]
                 keywords.clear()
@@ -252,10 +252,10 @@ def get_add_del_choosed_item(user_id=None,action=None,item=None):
 
             else:
 
-                print(len(choosed_items))
+                # print(len(choosed_items))
 
                 first_item=tuple(choosed_items.items())[0]
-                print(first_item)
+                # print(first_item)
 
                 choosed_items.clear()
                 choosed_items[first_item[0]]=first_item[1]
@@ -358,11 +358,11 @@ def controling_premium(user_id:int,new_premium_status:bool):
                            (keywords_limit, premium, user_id))
             conn.commit()
             if  premium_alive_period(user_id, 'null_time') =='time has been nulled':
-                print('yes')
+                # print('yes')
                 if get_add_del_choosed_item(user_id,action='1remain') =='cleared':
-                    print('yes')
+                    # print('yes')
                     if  add_delete_keyword(user_id,0,'1remain')=='1remain':
-                        print('yes')
+                        # print('yes')
                         return 3
 
 # print( controling_premium(user_id=704718950,new_premium_status=False    ))
@@ -384,7 +384,7 @@ def prem_status(user_id):
 def out_premium_check(user_id,action=None):
     # premium=prem_status(user_id)
     period = premium_alive_period(user_id,'remain_time')
-    print(type(period))
+    # print(type(period))
 
     if period !=0 and period>0:
         if action is not None:
@@ -392,10 +392,10 @@ def out_premium_check(user_id,action=None):
         else:
             return 'skip_prem'
     elif period <= 0 :
-        print(period)
+        # print(period)
         if prem_status(user_id)==True:
            if controling_premium(user_id, False) == 3:
-               print('зашел')
+               # print('зашел')
                return 'premium_out'
         else:
             return 'skip_notprem'
@@ -460,9 +460,9 @@ def get_user_and_keywords(user_id,checking=None):
             choosed_items=list(get_add_del_choosed_item(user_id,'get').values())
             # print(choosed_items)
             keywords=keywords+choosed_items
-            print(keywords)
+            # print(keywords)
             tuple_userid_kwrd=(user_id,keywords)
-            print(tuple_userid_kwrd)
+            # print(tuple_userid_kwrd)
             return tuple_userid_kwrd
     else:
         if checking is None :
@@ -512,6 +512,8 @@ russiandict={
     "натурал":"natural",
     "вайт":"white",
     "блэк":"black",
-    "грин":"green"
+    "грин":"green",
+    "синий":"blue",
+    "голубой":"blue"
 
 }

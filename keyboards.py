@@ -286,7 +286,7 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
 
                             for choosed in choosed_items:
                                 if choosed in callback_data:
-                                    print(choosed,'---',callback_data)
+                                    # print(choosed,'---',callback_data)
                                     callback_data = (f'construct_{product_choice}_{year_choice}_{model}_{spec}_{color}_'
                                                          f'{memory}_delete')
                                     if model in kybmark.keys():
