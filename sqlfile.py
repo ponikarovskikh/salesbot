@@ -22,6 +22,59 @@ def createtable_users():
     conn.commit()
     conn.close()
 
+
+
+#    List of all users
+
+def all_users_list():
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT user_id FROM users')
+    users_list = cursor.fetchall()
+    # print(users_list)
+    cursor.execute('SELECT user_id FROM users WHERE play = 1')
+    users_play_list = cursor.fetchall()
+    # print(users_play_list)
+    cursor.execute('SELECT user_id FROM users WHERE premium = 1')
+    users_premium_list = cursor.fetchall()
+    return len(users_list),len(users_play_list),len(users_premium_list)
+
+
+
+def all_admins():
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT admins_id FROM adminstable')
+    admins_list = cursor.fetchall()
+    admins=[]
+    for admin in admins_list:
+        for item in admin:
+            admins.append(item)
+    return admins
+
+print(all_admins())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def add_users_field(user_id,username=None,chat_id=None):
     conn = sqlite3.connect('bot_db.db')
     cursor=conn.cursor()

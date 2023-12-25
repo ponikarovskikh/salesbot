@@ -7,7 +7,7 @@ from Text_of_messages import *
 from config import *
 from keyboards import *
 import json
-
+from sqlfile import *
 import asyncio
 from pyrogram import Client
 
@@ -21,6 +21,15 @@ async def clientside(bot):
         getkeyword = ste()
 
 
+    # admin_control
+    @bot.message_handler(commands=['allusers'])
+    async def userslist(msg: Message):
+        admins=all_admins()
+        if msg.from_user.id in admins:
+            all_users,all_users_play,users_premium_list=all_users_list()
+            await bot.send_message(msg.chat.id,f'Количество пользователей всего: {all_users}\n\nКоличество активно '
+                                         f'принимающих сообщения из групп: {all_users_play}\n\nКоличество людей у '
+                                         f'кого premium: {users_premium_list}')
 
 
 
@@ -429,7 +438,7 @@ async def clientside(bot):
                             sender_username = msg.from_user.username
                             sender_id = msg.from_user.id
                         # print()
-                        if 0 not in need_send or (0 in need_send and guarantee>2):
+                        if 0 not in need_send or (0 in need_send and guarantee>=2):
                             # if user_id_to!=int(sender_id):
                                 if getchangeplaystatus(user_id_to,action='get')!=0:
 
@@ -481,14 +490,14 @@ async def clientside(bot):
                                                 callback.message.id, reply_markup=banlistmarkup(callback.message.chat.id,blocklist))
 
                 elif str(callback.data).startswith('ban_') and not str(callback.data).endswith("_banlist"):
-                    # print("ban")
+                    print(callback.data)
                     clback=callback.data.split('_')
                     # print(clback)
                     block_id = int(clback[1])
                     block_name=clback[2]
                     need_ban=[]
                     blocklist=add_delete_get_clear_blocked_users(block_id, block_name, callback.message.chat.id, 'getall')
-                    # print(blocklist)
+                    print(blocklist)
                     if len(blocklist)==0:
                         if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
                              await bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,callback.message.id,reply_markup=unblock_keyboard(block_id, block_name,None))
@@ -498,12 +507,18 @@ async def clientside(bot):
                                 need_ban.append(1)
                             else :
                                 need_ban.append(0)
-                        # print('need_ban',need_ban)
+                        print('need_ban',need_ban)
                         if 0 not in need_ban:
                             if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
                                 await bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,
                                                       callback.message.id,reply_markup=unblock_keyboard(block_id,
                                                                                                         block_name,None))
+                        else:
+                            if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
+                                await bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,
+                                                      callback.message.id,reply_markup=unblock_keyboard(block_id,
+                                                                                                        block_name,None))
+
                 elif str(callback.data).startswith('ban_')  and str(callback.data).endswith("_banlist"):
                     # print("ban_banlist")
                     clback=callback.data.split('_')
@@ -531,7 +546,8 @@ async def clientside(bot):
                                 reply_markup=menu_keyboard_2stage(callback.message.from_user.id))
 
                 elif str(callback.data).startswith('unban_') and not str(callback.data).endswith("_banlist"):
-                    # print('unban 1')
+                    print('unban 1')
+                    print(callback)
                     clback = callback.data.split('_')
                     unblock_id = int(clback[1])
                     unblock_name = clback[2]
@@ -707,8 +723,8 @@ async def serverside(app):
     async def forward_to_private_chat(app, message):
         chat_ids = [-1001995766142, -1002018161709, -1002091805379, -1001869659170, -1002101187519, -1002011356796, -1001995187845, -1002057441036, -1002049302049, -1002014932385, -1002060439501]
 
-        if int(message.from_user.id)!=6724529493:#огузок
-            if int(message.chat.id) not in chat_ids:
+        
+        if int(message.chat.id) not in chat_ids:
                 CANAL=message.chat.title
                 user_id=message.from_user.id
                 text=str(message.text).lower()
@@ -774,7 +790,7 @@ async def checking ():
 async def main():
     global task_list
     task_list=[]
-    app = Client("salesbot")#зменить
+    app = Client("my_account")
     bot = AsyncTeleBot(token=token_GorbushkinService,
                        state_storage=STM())
 
