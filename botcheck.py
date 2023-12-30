@@ -307,7 +307,7 @@ async def clientside(bot):
                                                              msg.chat.id))
                             else:
                                 await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
-                                await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'Оплатить '
+                                # await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'Оплатить '
                                                                                      
                                                                                      f'Premium на 30 дней ',
                                                                                                    f'_{msg.from_user.id}',
