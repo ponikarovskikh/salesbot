@@ -308,11 +308,11 @@ async def clientside(bot):
                             else:
                                 await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
                                 # await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'Оплатить '
-                                                                                     
-                                                                                     f'Premium на 30 дней ',
-                                                                                                   f'_{msg.from_user.id}',
-                                                 token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
-                                        'Купить', setprice('get') * 100)])
+                                #
+                                #                                                      f'Premium на 30 дней ',
+                                #                                                                    f'_{msg.from_user.id}',
+                                #                  token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
+                                #         'Купить', setprice('get') * 100)])
                         elif 'Руководство' in msg.text:
                             await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
 
