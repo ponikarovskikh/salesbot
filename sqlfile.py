@@ -3,24 +3,28 @@ import json
 import sqlite3
 from datetime import datetime, timedelta
 
-def createtable_users():
-    conn = sqlite3.connect('bot_db.db')
-    cursor = conn.cursor()
+# def createtable_users():
+#     conn = sqlite3.connect('bot_db.db')
+#     cursor = conn.cursor()
+#
+#     # Создание таблицы для хранения данных пользователей
+#     cursor.execute('''
+#         CREATE TABLE IF NOT EXISTS users (
+#             user_id INTEGER PRIMARY KEY,
+#             username TEXT,
+#             keywords TEXT,
+#             premium BOOLEAN DEFAULT FALSE,
+#             blocklist TEXT,
+#             keywords_limit INTEGER DEFAULT 1,
+#             play INTEGER DEFAULT 0
+#         )
+#     ''')
+#     conn.commit()
+#     conn.close()
 
-    # Создание таблицы для хранения данных пользователей
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            username TEXT,
-            keywords TEXT,
-            premium BOOLEAN DEFAULT FALSE,
-            blocklist TEXT,
-            keywords_limit INTEGER DEFAULT 1,
-            play INTEGER DEFAULT 0
-        )
-    ''')
-    conn.commit()
-    conn.close()
+
+
+
 
 
 
@@ -52,7 +56,7 @@ def all_admins():
             admins.append(item)
     return admins
 
-print(all_admins())
+# print(all_admins())
 
 
 
@@ -60,6 +64,41 @@ print(all_admins())
 
 
 
+
+def addinf_pos(product_name=None,text=None,priorities=None,action=None):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT product FROM stats")
+
+    # print(cursor.fetchall())
+    products=cursor.fetchall()
+    products=[product[0] for product in products]
+    # print(products)
+    if action !='get':
+        if text!=None and priorities !=None:
+            for product in products:
+                product_LIST=product.split(' ')
+                need_add = []
+                guarantee = 0
+                for item in product_LIST:
+                    if item in text:
+                        need_add.append(1)
+                        if item in priorities:
+                            guarantee+=1
+                    else:
+                        need_add.append(0)
+                if 0 not in need_add or (0 in need_add and guarantee>=2 )  :
+                    print(product,need_add,guarantee)
+                    cursor.execute("UPDATE stats SET query_count = query_count + 1 WHERE product = ?", (product,))
+                    conn.commit()
+        elif text is None and priorities is None:
+            cursor.execute("UPDATE stats SET query_count = 0 ")
+            conn.commit()
+    elif action=="get":
+        cursor.execute("SELECT product,query_count FROM stats")
+        products = cursor.fetchall()
+        # print(products)
+        return products
 
 
 
@@ -419,6 +458,49 @@ def controling_premium(user_id:int,new_premium_status:bool):
                         return 3
 
 # print( controling_premium(user_id=704718950,new_premium_status=False    ))
+
+
+
+def setprice(action=None,price=None):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    if action=='set':
+        cursor.execute('UPDATE calc SET price = ? WHERE calc_id =1 ',
+                       (price,))
+        conn.commit()
+        return 1
+    elif action=='get':
+        cursor.execute('SELECT price FROM calc WHERE calc_id = 1 ')
+        result=cursor.fetchone()
+        return result[0]
+def profit_calc():
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT sum,price,last_month,quant_sold,last_year FROM calc WHERE calc_id = 1 ')
+    result = cursor.fetchone()
+    return result
+
+
+# print(profit_calc())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

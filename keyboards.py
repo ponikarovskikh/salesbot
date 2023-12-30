@@ -32,7 +32,6 @@ def menu_keyboard_1stage():
 
 def menu_keyboard_2stage(user_id):
     keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    # func1 = types.KeyboardButton('Главное меню')
     func2=types.KeyboardButton('Выбрать товары🕹️')
     func3=types.KeyboardButton('Premium-тариф🔮')
     func4=types.KeyboardButton('Блок-лист❌')
@@ -42,10 +41,15 @@ def menu_keyboard_2stage(user_id):
     else:
         func6= types.KeyboardButton('Возобновить продажи▶️')
     func7= types.KeyboardButton("Руководство📚")
-    # keyboard.add(func1)
     keyboard.row(func2,func3)
     keyboard.row(func4,func5)
     keyboard.row(func6,func7)
+    func10=types.KeyboardButton("Статистика запросов📈")
+    keyboard.row(func10)
+    if user_id in all_admins():
+        func8 = types.KeyboardButton('Изменить цену Premium')
+        func9 = types.KeyboardButton('Сводка')
+        keyboard.row(func8,func9)
     return keyboard
 
 
@@ -148,16 +152,17 @@ def unblock_keyboard(block_id,block_name,banlist=None):
 
 
 def banlistmarkup(user_id,blocklist):
-    markup = types.InlineKeyboardMarkup(row_width=3)
+    markup = types.InlineKeyboardMarkup(row_width=2)
     blocklist=get_blocked_users(user_id,'dict')
-
+    buttons=[]
     for items in blocklist.items():
 
         button_text = f'{items[1]}'
         callback_data = f'unban_{items[0]}_{items[1]}_banlist'
 
         button = types.InlineKeyboardButton(text=button_text, callback_data=callback_data)
-        markup.add(button)
+        buttons.append(button)
+    markup.add(*buttons)
 
     return markup
 

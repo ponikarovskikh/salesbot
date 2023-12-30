@@ -2,39 +2,62 @@ from telebot import asyncio_filters
 from telebot.asyncio_storage import StateMemoryStorage as STM
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_handler_backends import StatesGroup as STSGR,State as ste
-import asyncio
 from Text_of_messages import *
 from config import *
 from keyboards import *
-import json
 from sqlfile import *
 import asyncio
 from pyrogram import Client
-
-
 global app
 global bot
+import aioschedule
+import aiosqlite
+import time
+from apscheduler.schedulers.background import BackgroundScheduler
+
+
+
 last_message_len=0
 
 async def clientside(bot):
     class SuperStates(STSGR):
         getkeyword = ste()
+        getnewprice=ste()
 
 
     # admin_control
-    @bot.message_handler(commands=['allusers'])
+    @bot.message_handler(commands=['admininfo'])
     async def userslist(msg: Message):
         admins=all_admins()
         if msg.from_user.id in admins:
             all_users,all_users_play,users_premium_list=all_users_list()
-            await bot.send_message(msg.chat.id,f'Количество пользователей всего: {all_users}\n\nКоличество активно '
-                                         f'принимающих сообщения из групп: {all_users_play}\n\nКоличество людей у '
-                                         f'кого premium: {users_premium_list}')
+            sum,price,last_month,quant_sold,last_year = profit_calc()
 
+            await bot.send_message(msg.chat.id,parametrs_info.format(all_users,all_users_play,users_premium_list,
+                                                                     price,quant_sold,sum,last_month,last_year),
+                                   parse_mode='HTML')
 
+    @bot.message_handler(commands=['setprice'])
+    async def pricesetinit(msg: Message):
+        admins = all_admins()
+        if msg.from_user.id in admins:
+            await bot.send_message(msg.chat.id,f'Укажите новую цену Premium')
+            await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.getnewprice, user_id=
+            msg.chat.id)
 
-    # print(StateMemoryStorage().get_state(Message.de_json(dict).id,Message.de_json().from_user.id))
-
+    @bot.message_handler(state=SuperStates.getnewprice)
+    async def pricesetprocess(msg: Message):
+        price=msg.text
+        try:
+            # Try to convert the text to an integer
+            value = int(price)
+            if  setprice('set',value) == 1:
+                await  bot.send_message(msg.chat.id, f'Новая цена Premium: {price} руб')
+            await bot.delete_state(msg.from_user.id, msg.chat.id)
+        except ValueError:
+            await bot.send_message(msg.chat.id, f'Что-то не так, введите стоимость еще раз')
+            await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.getnewprice, user_id=
+            msg.chat.id)
 
     @bot.message_handler(commands=['start'])
     async def welcome(msg:Message):
@@ -47,8 +70,7 @@ async def clientside(bot):
                 await bot.send_message(msg.chat.id,text=f'Привет, {username}!\n\n{welcome_preview}')
                 if add_users_field(user_id, username,chat_id) =='new added':
                     await bot.send_message(msg.chat.id,'Так как вы впервые у нас, ознакомьтесь с функционалом в разделе '
-                                                       '<b>Руководство📚</b>'
-                                                  ,reply_markup=menu_keyboard_2stage(user_id))
+                                                       '<b>Руководство📚</b>',  parse_mode='html', reply_markup=menu_keyboard_2stage(user_id))
                 else:
                    await  bot.send_message(msg.chat.id,'Друг, и снова здраствуй!',reply_markup=menu_keyboard_1stage())
 
@@ -285,31 +307,77 @@ async def clientside(bot):
                                                              msg.chat.id))
                             else:
                                 await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
-                                # await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'\n\n⏬⏬Оплатить {msg.from_user.first_name} '\
-                                #                                                f'Premium на '\
-                                #                                                f'30 дней⏬⏬',
-                                #                                                   f'buy_premium'
-                                #                                                                    f'_{msg.from_user.id}',
-                                #                  token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
-                                #         'Купить', 100 * 100)])
+                                await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'Оплатить '
+                                                                                     
+                                                                                     f'Premium на 30 дней ',
+                                                                                                   f'_{msg.from_user.id}',
+                                                 token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
+                                        'Купить', setprice('get') * 100)])
                         elif 'Руководство' in msg.text:
                             await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
 
                         elif  'Ключевые слова' in msg.text:
                               # print('кл сл')
                               await kwrdupdt(msg)
-                        elif  'Продажи на паузу'in msg.text:
+                        elif  'Продажи на паузу' in msg.text:
                             getchangeplaystatus(msg.chat.id,action=0)
                             await bot.send_message(msg.chat.id, 'Продажи приостановлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
-                        elif 'руководство бота' in msg.text.lower():
-                            await  support_handler(msg)
+
                             # bot.send_message(msg.chat.id, 'Раздел продажи на паузу в разработке')
                         elif 'Возобновить продажи' in msg.text:
                              getchangeplaystatus(msg.chat.id, action=1)
                              await bot.send_message(msg.chat.id, 'Продажи возобновлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
-                        # elif 'Статистика запросов' in msg.text :
-                        #     # print(msg.chat)
-                        #     bot.send_message(msg.chat.id, 'Раздел Статистика запросов в разработке')
+                        elif 'Статистика запросов' in msg.text :
+                            def get_current_date_numeric():
+                                current_date = datetime.now()
+                                return current_date.strftime("%d.%m")
+                            await bot.send_message(msg.chat.id, f'Cтатистика на {get_current_date_numeric()}')
+
+                            def format_products_for_message(products):
+                                message = "Список продуктов:\n"
+                                for product, count in products:
+                                    # Удаляем 'iphone' из строки продукта
+                                    product_without_iphone = product.replace('iphone ', '')
+                                    message += f"   {product_without_iphone} - {count}\n"
+
+                                return message
+                            def split_message_for_telegram(text, max_length=4096):
+                                # Разделение текста на части по максимальной длине
+                                parts = []
+                                while len(text) > 0:
+                                    # Если текст короче максимальной длины, добавляем его целиком
+                                    if len(text) <= max_length:
+                                        parts.append(text)
+                                        break
+                                    else:
+                                        # Находим последний подходящий перенос строки
+                                        split_index = text.rfind('\n', 0, max_length)
+                                        if split_index == -1:
+                                            # Если перенос строки не найден, разбиваем по максимальной длине
+                                            split_index = max_length
+
+                                        # Добавляем часть текста в список
+                                        parts.append(text[:split_index])
+                                        # Удаляем добавленную часть из исходного текста
+                                        text = text[split_index:]
+
+                                return parts
+                            products=addinf_pos(action='get')
+                            # Форматирование сообщения
+                            formatted_message = format_products_for_message(products)
+
+                            # Разделение сообщения на части
+                            message_parts = split_message_for_telegram(formatted_message)
+                            for item in message_parts:
+                                await bot.send_message(msg.chat.id, item)
+
+
+
+
+                        elif 'Изменить цену Premium' in msg.text:
+                            await  pricesetinit(msg)
+                        elif 'Сводка' in msg.text:
+                            await  userslist(msg)
                         else:
                              await bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
                     else:
@@ -328,7 +396,6 @@ async def clientside(bot):
                 #По тех причинам мы не в состоянии связаться с человеком если отсутствует никнейн добавляте себе его и мы
                 # обязатьно с вами свяжемся
 
-
                 Text = msg.text
                 # print("Text-",Text)
                 sender_id = msg.from_user.id
@@ -343,7 +410,7 @@ async def clientside(bot):
                     sender_id = crdtl[1]
                     sender_username = crdtl[2]
                 else:
-                    print("_@_set not in Text" )
+                    print("_@_set not in Text")
 
                 message_correct=Text.lower()
                 # print('сооьщ до полного перевода на англ',message_correct)
@@ -355,7 +422,46 @@ async def clientside(bot):
                         message_correct.insert(message_correct.index(item),russiandict[item])
                         message_correct.remove(item)
                 message_correct=' '.join(message_correct)
-                # print('а теперь после полного преервода',message_correct)
+
+                with open('IPHONE_LIST.json', 'r') as f:
+                    productlist = json.load(f)
+                priorities_model = []
+                priorities_color = []
+                priorities_memories = []
+                for product in tuple(productlist.keys()):
+                    years = productlist[product]
+                    for year in tuple(years.keys()):
+                        models = years[year]
+                        for model in models:
+                            if model not in priorities_model:
+                                priorities_model.append(model)
+                            specs = models[model]
+                            for spec in specs:
+                                colors = specs[spec]
+                                for color in colors:
+                                    if color not in priorities_color:
+                                        priorities_color.append(color)
+                                    memories = colors[color]
+                                    for memory in memories:
+                                        if memory not in priorities_memories:
+                                            priorities_memories.append(memory)
+
+                # print(priorities_color)
+                # print(priorities_memories)
+
+                priorities = priorities_memories + priorities_color + priorities_model
+
+                addinf_pos(text=message_correct,priorities=priorities)
+
+
+
+
+
+
+
+
+
+                                   # print('а теперь после полного преервода',message_correct)
                 users_and_keywords=[]
                 def users_and_keywords_list(access_sending:tuple,users_and_keywords:list):
                     for user_id in  access_sending:
@@ -384,36 +490,7 @@ async def clientside(bot):
                     # print(user_id_to)
                     # print('список проверяемых слов ',keywords_check)
 
-                    with open('IPHONE_LIST.json', 'r') as f:
-                        productlist = json.load(f)
-                    priorities_model=[]
-                    priorities_color=[]
-                    priorities_memories=[]
-                    for product in tuple(productlist.keys()):
-                        years=productlist[product]
-                        for year in tuple(years.keys()):
-                            models=years[year]
-                            for model in models:
-                                if model not in priorities_model:
-                                    priorities_model.append(model)
-                                specs=models[model]
-                                for spec in specs:
-                                    colors=specs[spec]
-                                    for color in colors:
-                                        if color not in priorities_color:
-                                            priorities_color.append(color)
-                                        memories=colors[color]
-                                        for memory in memories:
-                                            if memory not in priorities_memories:
-                                                priorities_memories.append(memory)
 
-
-
-
-                    # print(priorities_color)
-                    # print(priorities_memories)
-
-                    priorities=priorities_memories+priorities_color+priorities_model
                     # print(priorities)
 
 
@@ -634,12 +711,20 @@ async def clientside(bot):
                                 new_choosed_item = {f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'
                                                     f'_{product_memory}':[
                                     product_name,product_model,product_color,product_memory]}
-
+                                stroke_stat = (' ').join([
+                                    product_name,product_model,product_color,product_memory])
                     else:
                                 new_choosed_item = {f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'
                                                     f'_{product_memory}':[
                                     product_name,product_model,product_spec,product_color,product_memory]}
+                                stroke_stat=(' ').join([
+                                    product_name,product_model,product_spec,product_color,product_memory])
+
                     # print(new_choosed_item)
+
+                    # addinf_pos(stroke_stat)
+
+
                     if prem_status(callback.message.chat.id)==True:
                         get_add_del_choosed_item(callback.message.chat.id,"add",new_choosed_item)
                         await bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
@@ -725,7 +810,7 @@ async def serverside(app):
 
         
         if int(message.chat.id) not in chat_ids:
-                CANAL=message.chat.title
+
                 user_id=message.from_user.id
                 text=str(message.text).lower()
                 resolve=json.loads(str(message.from_user))
@@ -757,33 +842,46 @@ async def serverside(app):
 
 
 
-                            # await  app.send_message(text=f'set_@_{user_id}_@_{usrnm}_@_set' \
-                            #                       f'{message.text}', chat_id=-1001869659170)
-                            # except Exception as e:
-                            #     print(e)
+
+
+
+
+
 
 async def checking ():
     global wait_seconds
     wait_seconds=1
     first_len=0
+
     while True:
         from pyrogram.errors.exceptions.flood_420 import FloodWait
         first_len = len(task_list)
 
-
         await asyncio.sleep(5)
-        # print('таски=',task_list,len(task_list))
+            # print('таски=',task_list,len(task_list))
 
         if len(task_list)>5 or first_len==len(task_list) or len(task_list)-first_len<4 :
-            for task in task_list.copy():
-                await asyncio.sleep(wait_seconds)
-                try:
-                        await task
-                        task_list.remove(task)
-                        wait_seconds=1
+                for task in task_list.copy():
+                    await asyncio.sleep(wait_seconds)
+                    try:
+                            await task
+                            task_list.remove(task)
+                            wait_seconds=1
 
-                except Exception :
-                    pass
+                    except Exception :
+                        pass
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -793,6 +891,23 @@ async def main():
     app = Client("my_account")
     bot = AsyncTeleBot(token=token_GorbushkinService,
                        state_storage=STM())
+    scheduler = BackgroundScheduler()
+
+    def reset_column_values():
+        # Функция для обнуления значений в колонке
+        conn = sqlite3.connect('bot_db.db')
+        cursor = conn.cursor()
+        cursor.execute(f"UPDATE stats SET query_count = 0")
+        conn.commit()
+
+        # print(f"Значения в колонке  таблицы обнулены.")
+
+    import sqlfile
+    scheduler.add_job(reset_column_values, 'cron', hour=23, minute=59,
+                      )
+
+    scheduler.start()
+
 
     await asyncio.gather (asyncio.create_task(checking()),asyncio.create_task(serverside(await app.start())),
                           asyncio.create_task(clientside(bot)))
