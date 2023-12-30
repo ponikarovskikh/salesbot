@@ -137,9 +137,6 @@ async def clientside(bot):
 
     @bot.message_handler(state=SuperStates.getkeyword)
     async def add_new_keyword(msg:Message):
-
-
-
             if '\n' in msg.text:
                 newkeywordslist=msg.text.lower().split('\n')
                 # print(newkeywordslist)
@@ -154,8 +151,10 @@ async def clientside(bot):
                             await bot.send_message(msg.chat.id,
                                  'Ключевое слово не может быть добавлено, так как превышает лимит 1 из 1.\n\n' + premium_offer,
                                  reply_markup=menu_keyboard_2stage(msg.chat.id))
-                            break
-                await bot.delete_state(msg.from_user.id, msg.chat.id)
+
+
+
+                # await bot.delete_state(msg.from_user.id, msg.chat.id)
             elif '\n' not in msg.text:
                     newkeyword = msg.text.lower().split(' ')
                     if add_delete_keyword(msg.chat.id,newkeyword,'add') =='added':
@@ -163,10 +162,10 @@ async def clientside(bot):
                           msg.chat.id))
                         await bot.send_message(msg.chat.id, 'Добавим еще?',
                                       reply_markup=adddelete_keywords('addonly'))
-                    await bot.delete_state(msg.from_user.id, msg.chat.id)
-            else:
-                await bot.send_message(msg.chat.id, '❌Ключевое слово не может быть добавлено, так как превышает лимит 1 из 1.\n\n'+premium_offer,reply_markup=menu_keyboard_2stage(msg.chat.id))
-                await bot.delete_state(msg.from_user.id, msg.chat.id)
+
+                    else:
+                        await bot.send_message(msg.chat.id, '❌Ключевое слово не может быть добавлено, так как превышает лимит 1 из 1.\n\n'+premium_offer,reply_markup=menu_keyboard_2stage(msg.chat.id))
+            await bot.delete_state(msg.from_user.id, msg.chat.id)
 
     @bot.message_handler(commands=['keywordslist_clear'])
     async def kwrd_list_del(callback):
@@ -308,11 +307,11 @@ async def clientside(bot):
                             else:
                                 await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
                                 # await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'Оплатить '
-                                #
-                                #                                                      f'Premium на 30 дней ',
-                                #                                                                    f'_{msg.from_user.id}',
-                                #                  token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
-                                #         'Купить', setprice('get') * 100)])
+                                # #
+                                # #                                                      f'Premium на 30 дней ',
+                                # #                                                                    f'_{msg.from_user.id}',
+                                # #                  token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
+                                # #         'Купить', setprice('get') * 100)])
                         elif 'Руководство' in msg.text:
                             await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
 
@@ -889,7 +888,7 @@ async def main():
     global task_list
     task_list=[]
     app = Client("my_account")
-    bot = AsyncTeleBot(token=token_GorbushkinService,
+    bot = AsyncTeleBot(token=token_test_02,
                        state_storage=STM())
     scheduler = BackgroundScheduler()
 
