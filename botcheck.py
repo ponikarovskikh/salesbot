@@ -1077,7 +1077,7 @@ async def main():
     global task_list
     task_list=[]
     app = Client("my_account")
-    bot = AsyncTeleBot(token=token_test_02,
+    bot = AsyncTeleBot(token=token_GorbushkinService,
                        state_storage=STM())
     scheduler = BackgroundScheduler()
 
