@@ -49,7 +49,9 @@ def menu_keyboard_2stage(user_id):
     if user_id in all_admins():
         func8 = types.KeyboardButton('Изменить цену Premium')
         func9 = types.KeyboardButton('Сводка')
-        keyboard.row(func8,func9)
+        func11 = types.KeyboardButton('Рассылка')
+        keyboard.row(func8,func11,func9)
+
     return keyboard
 
 
@@ -65,12 +67,70 @@ def getfreepremium():
         }, row_width=1
     )
 
+def mailopenmenu(name):
+        return quick_markup(
+            {
+
+                'Разосласть': {'callback_data': f'mail_send_{name}'},
+                'Удалить': {'callback_data': f'mail_delete_{name}'},
+                'Назад': {'callback_data': f'my_mail_list'},
+
+            }, row_width=1
+        )
+
+
+def mail_list_db_kb(action=None):
+    if action=='list':
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        maillist=mail_db(action='list')
+        buttons = []
+
+        for items in maillist:
+            button_text = f'{items}'
+            callback_data = f'mail_open_{items}'
+            button = types.InlineKeyboardButton(text=button_text, callback_data=callback_data)
+            buttons.append(button)
+        markup.add(*buttons,row_width=2)
+        button_text = f'Назад↩️'
+        callback_data = f'my_mail_menu'
+        button = types.InlineKeyboardButton(text=button_text, callback_data=callback_data)
+        markup.add(button)
+
+
+        return markup
+    elif action=='back':
+        return quick_markup(
+            {
+                'Назад': {'callback_data': f'my_mail_menu'},
+
+            }, row_width=2
+        )
 
 
 
 
+#расслыка
+def mailmenu(action=None):
+        return quick_markup(
+        {
+
+        'Добавить рассылку': {'callback_data': f'add_mail_item'},
+        'Мои рассылки':{'callback_data': f'my_mail_list'}
+
+        }, row_width=2
+    )
 
 
+def addmail_reject(action=None):
+    return quick_markup(
+        {
+
+            '✅Добавить в список рассылок': {'callback_data': f'add_list_mail'},
+            '↩️Задать другое название': {'callback_data': f'change_name_mail'},
+            '↩️Заменить текст': {'callback_data': f'change_content_mail'},
+            '❌Отменить добавление': {'callback_data': f'reject_new_mail'}
+        }, row_width=2
+    )
 
 
 

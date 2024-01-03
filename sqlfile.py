@@ -24,24 +24,63 @@ from datetime import datetime, timedelta
 
 
 
+# рассылка
+
+def mail_db(namemail=None,contentmail=None,action=None):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    if action =='add':
+        cursor.execute('SELECT name_mail  FROM mailing')
+        result=cursor.fetchall()
+        print(result)
+        if namemail not in [x[0] for x in result]:
+            cursor.execute(
+            'INSERT INTO mailing (name_mail,caption) VALUES (?,?)',
+            (namemail,contentmail))
+            conn.commit()
+            return 'added'
+        else:
+            return 'error'
+    elif action=='list':
+        cursor.execute('SELECT name_mail  FROM mailing')
+        result = cursor.fetchall()
+        return [x[0] for x in result]
+    elif action == 'get':
+        cursor.execute(f'SELECT caption  FROM mailing WHERE name_mail="{namemail}"')
+        result = cursor.fetchone()
+        # return result[0]
+        # print(result[0])
+        return result[0]
+    elif action=='delete':
+        cursor.execute(f"DELETE FROM mailing WHERE  name_mail ='{namemail}' ")
+        conn.commit()
+        return 'delete'
 
 
-
+# mail_db(namemail='povar',contentmail='iop',action='get')
 
 #    List of all users
 
-def all_users_list():
-    conn = sqlite3.connect('bot_db.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT user_id FROM users')
-    users_list = cursor.fetchall()
-    # print(users_list)
-    cursor.execute('SELECT user_id FROM users WHERE play = 1')
-    users_play_list = cursor.fetchall()
-    # print(users_play_list)
-    cursor.execute('SELECT user_id FROM users WHERE premium = 1')
-    users_premium_list = cursor.fetchall()
-    return len(users_list),len(users_play_list),len(users_premium_list)
+def all_users_list(action=None):
+    if action is None:
+        conn = sqlite3.connect('bot_db.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT user_id FROM users')
+        users_list = cursor.fetchall()
+        # print(users_list)
+        cursor.execute('SELECT user_id FROM users WHERE play = 1')
+        users_play_list = cursor.fetchall()
+        # print(users_play_list)
+        cursor.execute('SELECT user_id FROM users WHERE premium = 1')
+        users_premium_list = cursor.fetchall()
+        return len(users_list),len(users_play_list),len(users_premium_list)
+    else:
+        conn = sqlite3.connect('bot_db.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT user_id FROM users')
+        users_list = cursor.fetchall()
+        return [x[0] for x in users_list]
+
 
 
 
@@ -240,7 +279,7 @@ def add_delete_keyword(user_id:int,keyword=None,action:str=None):
             keywords = json.loads(result[0])
             keywords_limit=int(result[1])
             premium=bool(result[2])
-            # print(keywords,keywords_limit,premium)
+            print(keywords,keywords_limit,premium)
             if premium is True :
                 # print(1)
                 keywords.append(keyword)
