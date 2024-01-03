@@ -71,9 +71,9 @@ def mailopenmenu(name):
         return quick_markup(
             {
 
-                'Разосласть': {'callback_data': f'mail_send_{name}'},
-                'Удалить': {'callback_data': f'mail_delete_{name}'},
-                'Назад': {'callback_data': f'my_mail_list'},
+                'Разослать📣': {'callback_data': f'mail_send_{name}'},
+                'Удалить❌': {'callback_data': f'mail_delete_{name}'},
+                'Назад↩️': {'callback_data': f'my_mail_list'},
 
             }, row_width=1
         )
