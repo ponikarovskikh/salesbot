@@ -1076,7 +1076,7 @@ async def checking ():
 async def main():
     global task_list
     task_list=[]
-    # app = Client("my_account")
+    app = Client("my_account")
     bot = AsyncTeleBot(token=token_test_02,
                        state_storage=STM())
     scheduler = BackgroundScheduler()
@@ -1099,7 +1099,7 @@ async def main():
 
 
     await asyncio.gather (asyncio.create_task(checking()),
-                          asyncio.create_task(clientside(bot)))#asyncio.create_task(serverside(await app.start())))
+                          asyncio.create_task(clientside(bot)),asyncio.create_task(serverside(await app.start())))
 
 
     # Запуск бота в бесконечном цикле
