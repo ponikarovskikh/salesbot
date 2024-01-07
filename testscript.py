@@ -1,115 +1,94 @@
-# from telebot import asyncio_filters
-# from telebot.async_telebot import AsyncTeleBot
-#
-# # list of storages, you can use any storage
-# from telebot.asyncio_storage import StateMemoryStorage
-#
-# # new feature for states.
-# from telebot.asyncio_handler_backends import State, StatesGroup
-#
-# import config
-#
-# # default state storage is statememorystorage
-# bot = AsyncTeleBot(config.token_test_02, state_storage=StateMemoryStorage())
-#
-#
-# # Just create different statesgroup
-# class MyStates(StatesGroup):
-#     name = State()  # statesgroup should contain states
-#     surname = State()
-#     age = State()
-#
-#
-# # set_state -> sets a new state
-# # delete_state -> delets state if exists
-# # get_state -> returns state if exists
-#
-#
-# @bot.message_handler(commands=['start'])
-# async def start_ex(message):
-#     """
-#     Start command. Here we are starting state
-#     """
-#     await bot.set_state(message.from_user.id, MyStates.name, message.chat.id)
-#     await bot.send_message(message.chat.id, 'Hi, write me a name')
-#
-#
-# @bot.message_handler(state="*", commands='cancel')
-# async def any_state(message):
-#     """
-#     Cancel state
-#     """
-#     await bot.send_message(message.chat.id, "Your state was cancelled.")
-#     await bot.delete_state(message.from_user.id, message.chat.id)
-#
-#
-# @bot.message_handler(state=MyStates.name)
-# async def name_get(message):
-#     """
-#     State 1. Will process when user's state is MyStates.name.
-#     """
-#     await bot.send_message(message.chat.id, f'Now write me a surname')
-#     await bot.set_state(message.from_user.id, MyStates.surname, message.chat.id)
-#     async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-#         data['name'] = message.text
-#
-#
-# @bot.message_handler(state=MyStates.surname)
-# async def ask_age(message):
-#     """
-#     State 2. Will process when user's state is MyStates.surname.
-#     """
-#     await bot.send_message(message.chat.id, "What is your age?")
-#     await bot.set_state(message.from_user.id, MyStates.age, message.chat.id)
-#     async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-#         data['surname'] = message.text
-#
-#
-# # result
-# @bot.message_handler(state=MyStates.age, is_digit=True)
-# async def ready_for_answer(message):
-#     """
-#     State 3. Will process when user's state is MyStates.age.
-#     """
-#     async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-#         await bot.send_message(message.chat.id,
-#                                "Ready, take a look:\n<b>Name: {name}\nSurname: {surname}\nAge: {age}</b>".format(
-#                                    name=data['name'], surname=data['surname'], age=message.text), parse_mode="html")
-#     await bot.delete_state(message.from_user.id, message.chat.id)
-#
-#
-# # incorrect number
-# @bot.message_handler(state=MyStates.age, is_digit=False)
-# async def age_incorrect(message):
-#     """
-#     Will process for wrong input when state is MyState.age
-#     """
-#     await bot.send_message(message.chat.id,
-#                            'Looks like you are submitting a string in the field age. Please enter a number')
-#
-#
-# # register filters
-#
-# bot.add_custom_filter(asyncio_filters.StateFilter(bot))
-# bot.add_custom_filter(asyncio_filters.IsDigitFilter())
-#
-# import asyncio
-#
-# # asyncio.run(bot.polling())
+import types
 
-
-
-
+from telebot import asyncio_filters
+from telebot.asyncio_storage import StateMemoryStorage as STM
+from telebot.async_telebot import AsyncTeleBot
+from telebot.asyncio_handler_backends import StatesGroup as STSGR,State as ste
+from Text_of_messages import *
+from config import *
+from keyboards import *
+from sqlfile import *
 import asyncio
 from pyrogram import Client
+global app
+import pandas as pd
+global bot
+bot=TeleBot(token='6841670926:AAG-1wrHdVfP7FP3NjhV96bUVwKXB3AZzno')
 
-api_id = 23911133
-api_hash = '44b5d0a060440c5cfcf3f554bf5650f7'
+# @bot.message_handler(func=lambda message: True,content_types=['document'])
+# def handle_docs_photo(message):
+#         chat_id = message.chat.id
+#         file_info = bot.get_file(message.document.file_id)
+#         downloaded_file = bot.download_file(file_info.file_path)
+#         # print(Document)
+#         # Сохранение файла локально
+#         with open('temp.xlsx', 'wb') as new_file:
+#             new_file.write(downloaded_file)
+#
+#         # Обработка файла Excel
+#         df = pd.read_excel('temp.xlsx')
+#
+#         # Вывод каждой строки файла
+#         for index, row in df.iterrows():
+#             print(f"Строка {index}: {row.tolist()}")
+#
+#         # Удаление временного файла
+#         os.remove('temp.xlsx')
+#
+#         bot.send_message(chat_id, "Данные файла Excel обработаны.")
+#
+#
+# bot.polling(non_stop=True)
 
 
-async def main():
-    async with Client("salesbot", api_id, api_hash) as app:
-        await app.send_message('sparjaolives', "Greetings from ww**Pyrogram**!")
+# bot = telebot.TeleBot('YOUR_BOT_TOKEN')
 
 
-asyncio.run(main())
+
+
+
+@bot.message_handler(content_types=['document'])
+def handle_document(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id
+    file_info =await bot.get_file(msg.document.file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
+
+    file_name = 'temp.xlsx'
+    with open(file_name, 'wb') as new_file:
+        new_file.write(downloaded_file)
+
+
+    try:
+        df = pd.read_excel(file_name, usecols='A:B')
+        print(df,'df')
+        data = [(row) for index, row in df.iterrows()]
+        print(data,'писок')
+        create_table_and_insert_data(user_id, data)
+        bot.send_message(chat_id, "Данные из файла Excel сохранены в базу данных.")
+    except Exception as e:
+        print(e)
+        # bot.send_message(chat_id, f"Ошибка при обработке файла: {e}")
+
+    if os.path.exists(file_name):
+        os.remove(file_name)
+
+
+
+
+def format_products_data(data):
+    message = " Актуальный Список продуктов и цен:\n"
+    for product, price in data:
+        message += f"{product}: {int(price)}\n"
+    return message
+
+@bot.message_handler(commands=['getdata'])
+def send_products_data(message:Message):
+    data = get_products_data(message.from_user.id)
+    formatted_message = format_products_data(data)
+    bot.send_message(message.chat.id, formatted_message)
+
+bot.polling()
+
+bot.polling()
+

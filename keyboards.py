@@ -51,6 +51,9 @@ def menu_keyboard_2stage(user_id):
         func9 = types.KeyboardButton('Сводка')
         func11 = types.KeyboardButton('Рассылка')
         keyboard.row(func8,func11,func9)
+        func12 = types.KeyboardButton('Прайслист')
+        keyboard.row(func12)
+
 
     return keyboard
 
@@ -375,6 +378,24 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
         markup.add(*buttonsmenumodel,row_width=pos_len)
                             # print(buttons)
         return markup
+
+def pricelistmenu(action=None):
+        return quick_markup(
+            {
+
+                'Загрузить новый': {'callback_data': f'upload_pricelist'},
+                'Текущий ': {'callback_data': f'get_pricelist'}
+
+            }, row_width=2
+        )
+
+
+
+
+
+
+
+
 
 
 

@@ -7,9 +7,12 @@ from config import *
 from keyboards import *
 from sqlfile import *
 import asyncio
-from pyrogram import Client
+from pyrogram import Client,methods as MTHPYRO
+
+
 global app
 global bot
+import pandas as pd
 import aioschedule
 import aiosqlite
 import time
@@ -25,12 +28,46 @@ async def clientside(bot):
             getnewprice=ste()
             getnamemail=ste()
             getcontentmail=ste()
+            getpricelist=ste()
 
 
+        # прайслист
+        @bot.message_handler(state=SuperStates.getpricelist,content_types=['document'])
+        async def pricelistprocess(msg):
+            chat_id = msg.chat.id
+            user_id = msg.from_user.id
 
+            username=msg.from_user.username
+            if username is None:
+                await bot.send_message(msg.chat.id,'Упс у вас не указан Юзернэйм в вашем Tелеграмм-профиле,'
+                                                'без него никак. Укажите его и повторите попытку. ')
+                await bot.delete_state(msg.from_user.id, msg.chat.id)
+                pass
+            else:
+                try:
+                    file_info =await bot.get_file(msg.document.file_id)
+                    # print(file_info)
+                    downloaded_file =await bot.download_file(file_info.file_path)
+                    # print(downloaded_file,'down-')
+                except Exception as e:
+                    print(e)
 
+                file_name = 'temp.xlsx'
+                with open(file_name, 'wb') as new_file:
+                    new_file.write(downloaded_file)
 
+                try:
+                    df = pd.read_excel(file_name, usecols='A:B')
+                    # print(df, 'df')
+                    data = [(row) for index, row in df.iterrows()]
+                    # print(data, 'писок')
+                    create_table_and_insert_data(user_id, data,username)
+                    await bot.send_message(chat_id, "Ваш новый прайслист сохранен",reply_markup=pricelistmenu())
+                except Exception as e:
+                    await bot.send_message(chat_id, f"Ошибка при обработке файла: {e}")
 
+                if os.path.exists(file_name):
+                    os.remove(file_name)
 
         # admin_control
         @bot.message_handler(commands=['admininfo'])
@@ -469,8 +506,11 @@ async def clientside(bot):
                             elif 'Сводка' in msg.text:
                                 await  userslist(msg)
                             elif 'Рассылка' in msg.text:
-
                                 await  bot.send_message(msg.chat.id,'Выберите действие',reply_markup=mailmenu())
+                            elif 'Прайслист' in msg.text:
+                                await  bot.send_message(msg.chat.id, '<b>Мой Прайслист</b>\n\nВыберите действие',
+                                                        parse_mode='html',
+                                                        reply_markup=pricelistmenu())
                             else:
                                  await bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
 
@@ -902,9 +942,6 @@ async def clientside(bot):
                                                                                  "отправьте "
                                                                                  )
                                 await bot.set_state(callback.from_user.id,SuperStates.getnamemail,callback.message.chat.id)
-
-
-
                     elif callback.data=='add_mail_item':
                         print(callback,'----------')
                         await bot.edit_message_text('Напишите название вашей будущей рассылки',
@@ -914,7 +951,6 @@ async def clientside(bot):
                             print('mailingnameprocess', data)
                             data['namemail'] = None
                             data['contentmail']=None
-
                     elif callback.data.startswith('mail_send_'):
                         print(callback.data)
                         name = callback.data.split("_")[2]
@@ -939,9 +975,6 @@ async def clientside(bot):
                                                f"Рассылка разослана {auditory} из {allauditory}",
                                                parse_mode='html',
                                                reply_markup=mailopenmenu(name))
-
-
-
                     elif callback.data=='my_mail_list':
                         if len( mail_db(action='list'))>0:
                             await bot.edit_message_text(f"Мои рассылки\n\nВыберите рассылку ",callback.message.chat.id,callback.message.id,
@@ -978,6 +1011,28 @@ async def clientside(bot):
                                                             callback.message.chat.id, callback.message.id,
                                                             reply_markup=mail_list_db_kb(action='back'))
                         await bot.delete_state(callback.from_user.id, callback.message.chat.id)
+        #                 блок прайслист
+                    elif callback.data=='upload_pricelist':
+                        await bot.send_message(callback.message.chat.id,
+                                               f"<b>Загрузите ваш прайслист в формате EXCEL-файла</b>\n\n"
+                                               f"<b>Прайслист должен быть в следующем формате</b>❗❗❗\n\nв 1 столбце - товар, "
+                                               f"во 2-ом - цена\n\n"
+                                               f"Пример: https://clck.ru/37V8L5",disable_web_page_preview=True,
+                                               parse_mode='html'
+                                               )
+                        await bot.set_state(callback.from_user.id, SuperStates.getpricelist, callback.message.chat.id)
+
+
+                    elif callback.data=='get_pricelist':
+                        def format_products_data(data):
+                            message = "<u><b>Ваш текущий прайслист</b></u>💰\n\n"
+                            for product, price in data:
+                                message += f"<b>{product.capitalize()}</b> : {int(price)} ₽\n"
+                            return message
+
+                        data = get_products_data(callback.from_user.id)
+                        formatted_message = format_products_data(data)
+                        await  bot.send_message(callback.message.chat.id, formatted_message,parse_mode='html')
 
         bot.add_custom_filter(asyncio_filters.StateFilter(bot))
         await bot.polling(non_stop=True)
@@ -987,11 +1042,21 @@ async def clientside(bot):
 
 
 async def serverside(app):
-    # print('pfgeo')
+    # автоответ
+    async  def recall_pricelist(msg):
+        print('дошло')
+        tasks=await checking_products_bd(msg)
+        # parse_mode='Markdown'
+        for task in tasks:
+            items,seller,customer=task
 
+            price_offer=f'Предложение от [{seller}](https://t.me/{seller}):\n\n'
+            for item in items:
+                price_offer+=f'{item[0].capitalize() }: {int(item[1])}\n'
+            print(price_offer)
+            await asyncio.sleep(2)
+            await app.send_message(chat_id=customer,text=price_offer)
 
-    # Замените "TARGET_GROUP" на username или ID вашей группы
-    # TARGET_GROUP = "-1001946865525"
 
     async def send_message_with_interval(app, chat_id, text, interval):
 
@@ -1006,7 +1071,7 @@ async def serverside(app):
     @app.on_message()
     async def forward_to_private_chat(app, message):
         chat_ids = [-1001995766142, -1002018161709, -1002091805379, -1001869659170, -1002101187519, -1002011356796, -1001995187845, -1002057441036, -1002049302049, -1002014932385, -1002060439501]
-
+        # print(message)
         
         if int(message.chat.id) not in chat_ids:
 
@@ -1025,6 +1090,7 @@ async def serverside(app):
                                 usrnm = message.from_user.username
                                 if any(keyword in text for keyword in ['куплю', 'предложите', 'ищу','?','купить',
                                                                                'buy','ищу']):
+                                    await recall_pricelist(message)
                                     # print('-------------\n',resolve['username'])
                                     # print(message.text)
                                     random.shuffle(chat_ids)
@@ -1035,6 +1101,11 @@ async def serverside(app):
                                     task_list.append(send_message_with_interval(app,  random_chat_id,
                                         f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 0.1))
                                     last_message_len=len(text)
+
+    pass
+async def autoseller(seller_bot):
+    pass
+
 
 
 
@@ -1076,11 +1147,11 @@ async def checking ():
 async def main():
     global task_list
     task_list=[]
-    app = Client("my_account")
-    bot = AsyncTeleBot(token=token_GorbushkinService,
+    app = Client("salesbot")
+    bot = AsyncTeleBot(token=token_test_02,
                        state_storage=STM())
     scheduler = BackgroundScheduler()
-
+    # обнулятор статистики не трогать
     def reset_column_values():
         # Функция для обнуления значений в колонке
         conn = sqlite3.connect('bot_db.db')

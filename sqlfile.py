@@ -22,6 +22,81 @@ from datetime import datetime, timedelta
 #     conn.commit()
 #     conn.close()
 
+# pricelist blck
+
+def create_table_and_insert_data(user_id, data,username=None):
+    table_name = f'price_{user_id}_{username}'
+    conn = sqlite3.connect('Seller_db.db')
+    cursor = conn.cursor()
+
+    # Создание таблицы с колонками 'product' и 'price'
+    cursor.execute(f'CREATE TABLE IF NOT EXISTS {table_name} (product TEXT, price REAL)')
+    cursor.execute(f'DELETE FROM {table_name}')
+    # Вставка данных в таблицу
+    cursor.executemany(f'INSERT INTO {table_name} (product, price) VALUES (?, ?)', data)
+    conn.commit()
+    conn.close()
+
+
+
+def get_products_data(user_id):
+    conn = sqlite3.connect('Seller_db.db')
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT product, price FROM price_{user_id}")
+    data = cursor.fetchall()
+
+    conn.close()
+    return data
+
+
+# и тут автоответчик
+async def checking_products_bd(msg):
+    conn = sqlite3.connect('Seller_db.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables=[x[0] for x in cursor.fetchall()]
+    tasks=[]
+    customer = msg.from_user.username  # покупатель
+    for table in tables:
+        # от каждого продавца
+        # print(table)
+        seller=table.split('_')[2]
+
+        cursor.execute(f"SELECT product, price FROM {table}")
+        rows = cursor.fetchall()
+        # print(rows)
+        combo_price=[]
+        for row in rows:
+            product_items=row[0]
+            #
+            # print(product_items)
+
+            if ' ' in  product_items:
+                product_items= product_items.replace('  ', ' ')
+                product_items=product_items.split(' ')
+
+                # print(product_items)
+            else:
+                product_items=[product_items]
+                # print(product_items)
+            need_send=[]
+            for item in product_items:
+                if item in msg.text.lower():
+                    need_send.append(1)
+
+            if len(product_items)==len(need_send):
+                combo_price.append(row)
+        tasks.append((combo_price,seller,customer))
+
+    return tuple(tasks)
+
+                # return row
+
+
+
+
+# print(checking_products_bd())
 
 
 # рассылка
@@ -691,3 +766,4 @@ russiandict={
     "голубой":"blue"
 
 }
+
