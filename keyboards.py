@@ -379,17 +379,30 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
                             # print(buttons)
         return markup
 
-def pricelistmenu(action=None):
-        return quick_markup(
-            {
-
-                'Загрузить новый': {'callback_data': f'upload_pricelist'},
-                'Текущий ': {'callback_data': f'get_pricelist'}
-
-            }, row_width=2
-        )
+def pricelistmenu(user_id):
 
 
+            markup = types.InlineKeyboardMarkup(row_width=2)
+            table=checking_products_bd(action='get',user_id=user_id)
+            buttons=[]
+            if table is False:
+                button0 = types.InlineKeyboardButton(text=f'Загрузить', callback_data='upload_pricelist')
+                buttons.append(button0)
+            if table is True:
+                button1 = types.InlineKeyboardButton(text=f'Загрузить новый', callback_data='upload_pricelist')
+                button2 = types.InlineKeyboardButton(text='Текущий', callback_data='get_pricelist')
+                buttons.append(button1)
+                buttons.append(button2)
+                if autocallstatus(user_id,'get') is False:
+
+                    button3 = types.InlineKeyboardButton(text='Авто-ответчик',
+                                                 callback_data='auto_call_on')
+                else:
+                    button3 = types.InlineKeyboardButton(text='✅Авто-ответчик',
+                                     callback_data='auto_call_off')
+                buttons.append(button3)
+            markup.add(*buttons,row_width=2)
+            return markup
 
 
 

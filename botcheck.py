@@ -19,7 +19,7 @@ import time
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
-
+# добавить управление на автоответ
 last_message_len=0
 
 async def clientside(bot):
@@ -62,10 +62,12 @@ async def clientside(bot):
                     data = [(row) for index, row in df.iterrows()]
                     # print(data, 'писок')
                     create_table_and_insert_data(user_id, data,username)
-                    await bot.send_message(chat_id, "Ваш новый прайслист сохранен",reply_markup=pricelistmenu())
+                    await bot.send_message(chat_id, "Ваш новый прайслист сохранен✅")
+                    await bot.send_message(chat_id, auto_call,  parse_mode='html',reply_markup=pricelistmenu(
+                        msg.from_user.id))
                 except Exception as e:
                     await bot.send_message(chat_id, f"Ошибка при обработке файла: {e}")
-
+                await bot.delete_state(msg.from_user.id, msg.chat.id)
                 if os.path.exists(file_name):
                     os.remove(file_name)
 
@@ -406,6 +408,7 @@ async def clientside(bot):
         @bot.message_handler(func=lambda msg:Message )
         async def messagecheck(msg):
                 # print(msg.text,msg.chat.id,msg.chat.type)
+                print(msg.text)
                 if msg.chat.type =='private':
                     if add_users_field(msg.from_user.id,msg.from_user.username,msg.chat.id)!='new added':
                         if out_premium_check(msg.chat.id) in ['skip_prem','skip_notprem']:
@@ -508,9 +511,9 @@ async def clientside(bot):
                             elif 'Рассылка' in msg.text:
                                 await  bot.send_message(msg.chat.id,'Выберите действие',reply_markup=mailmenu())
                             elif 'Прайслист' in msg.text:
-                                await  bot.send_message(msg.chat.id, '<b>Мой Прайслист</b>\n\nВыберите действие',
+                                await  bot.send_message(msg.chat.id, auto_call,
                                                         parse_mode='html',
-                                                        reply_markup=pricelistmenu())
+                                                        reply_markup=pricelistmenu(msg.from_user.id))
                             else:
                                  await bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
 
@@ -527,7 +530,7 @@ async def clientside(bot):
                     else:
                         await welcome(msg)
                 if 'group' in msg.chat.type:
-                    # print(msg)
+                    print(msg)
                     #По тех причинам мы не в состоянии связаться с человеком если отсутствует никнейн добавляте себе его и мы
                     # обязатьно с вами свяжемся
 
@@ -650,7 +653,7 @@ async def clientside(bot):
                                 sender_username = msg.from_user.username
                                 sender_id = msg.from_user.id
                             # print()
-                            if 0 not in need_send or (0 in need_send and guarantee>=2):
+                            if 0 not in need_send or (0 in need_send and guarantee>=3):
                                 # if user_id_to!=int(sender_id):
                                     if getchangeplaystatus(user_id_to,action='get')!=0:
 
@@ -1033,6 +1036,19 @@ async def clientside(bot):
                         data = get_products_data(callback.from_user.id)
                         formatted_message = format_products_data(data)
                         await  bot.send_message(callback.message.chat.id, formatted_message,parse_mode='html')
+                    elif callback.data==('auto_call_on'):
+
+                            autocallstatus(callback.from_user.id,'change')
+                            await bot.edit_message_text(auto_call, callback.message.chat.id,
+                                                        callback.message.id, parse_mode='html',
+                                                        reply_markup=pricelistmenu(callback.from_user.id))
+
+                    elif callback.data==('auto_call_off'):
+                        autocallstatus(callback.from_user.id, 'change')
+                        await bot.edit_message_text(auto_call, callback.message.chat.id,
+                                                    callback.message.id, parse_mode='html',
+                                                    reply_markup=pricelistmenu(callback.from_user.id))
+
 
         bot.add_custom_filter(asyncio_filters.StateFilter(bot))
         await bot.polling(non_stop=True)
@@ -1042,22 +1058,6 @@ async def clientside(bot):
 
 
 async def serverside(app):
-    # автоответ
-    async  def recall_pricelist(msg):
-        print('дошло')
-        tasks=await checking_products_bd(msg)
-        # parse_mode='Markdown'
-        for task in tasks:
-            items,seller,customer=task
-
-            price_offer=f'Предложение от [{seller}](https://t.me/{seller}):\n\n'
-            for item in items:
-                price_offer+=f'{item[0].capitalize() }: {int(item[1])}\n'
-            print(price_offer)
-            await asyncio.sleep(2)
-            await app.send_message(chat_id=customer,text=price_offer)
-
-
     async def send_message_with_interval(app, chat_id, text, interval):
 
         await asyncio.sleep(interval)
@@ -1065,11 +1065,32 @@ async def serverside(app):
             await app.send_message(chat_id=chat_id, text=text)
 
         except Exception as e:
-            task_list.append(send_message_with_interval(app,chat_id,text,interval))
+            task_list.append(send_message_with_interval(app, chat_id, text, interval))
+    # автоответ
+    async  def recall_pricelist(msg):
+        # print('дошло')
+        tasks=checking_products_bd(msg)
+        # parse_mode='Markdown'
+        print(tasks)
+        for task in tasks:
+            items,seller,customer=task
+
+            price_offer=f'Предложение от [{seller}](https://t.me/{seller}):\n\n'
+            for item in items:
+                price_offer+=f'{item[0].capitalize() }: {int(item[1])}\n'
+            print(price_offer)
+            task_list.append(send_message_with_interval(app, customer,
+                                                        price_offer, 2))
+
+
+
+
+
 
 
     @app.on_message()
     async def forward_to_private_chat(app, message):
+        print('akj')
         chat_ids = [-1001995766142, -1002018161709, -1002091805379, -1001869659170, -1002101187519, -1002011356796, -1001995187845, -1002057441036, -1002049302049, -1002014932385, -1002060439501]
         # print(message)
         
@@ -1089,7 +1110,8 @@ async def serverside(app):
                             if 'bot' not in text :
                                 usrnm = message.from_user.username
                                 if any(keyword in text for keyword in ['куплю', 'предложите', 'ищу','?','купить',
-                                                                               'buy','ищу']):
+                                                                                  'buy','ищу']):
+
                                     await recall_pricelist(message)
                                     # print('-------------\n',resolve['username'])
                                     # print(message.text)
@@ -1127,7 +1149,7 @@ async def checking ():
         from pyrogram.errors.exceptions.flood_420 import FloodWait
         first_len = len(task_list)
 
-        await asyncio.sleep(5)
+
             # print('таски=',task_list,len(task_list))
 
         if len(task_list)>5 or first_len==len(task_list) or len(task_list)-first_len<4 :
@@ -1147,7 +1169,7 @@ async def checking ():
 async def main():
     global task_list
     task_list=[]
-    app = Client("salesbot")
+    app = Client("Gorbushkinuserbot")
     bot = AsyncTeleBot(token=token_test_02,
                        state_storage=STM())
     scheduler = BackgroundScheduler()
