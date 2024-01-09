@@ -13,8 +13,7 @@ from pyrogram import Client,methods as MTHPYRO
 global app
 global bot
 import pandas as pd
-import aioschedule
-import aiosqlite
+
 import time
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -62,7 +61,9 @@ async def clientside(bot):
                     data = [(row) for index, row in df.iterrows()]
                     # print(data, 'писок')
                     create_table_and_insert_data(user_id, data,username)
-                    await bot.send_message(chat_id, "Ваш новый прайслист сохранен",reply_markup=pricelistmenu())
+                    await bot.send_message(chat_id, "Ваш новый прайслист сохранен✅")
+                    await bot.send_message(chat_id,autocall_text,parse_mode='html',
+                    reply_markup=pricelistmenu( msg.from_user.id))
                 except Exception as e:
                     await bot.send_message(chat_id, f"Ошибка при обработке файла: {e}")
 
@@ -506,11 +507,12 @@ async def clientside(bot):
                             elif 'Сводка' in msg.text:
                                 await  userslist(msg)
                             elif 'Рассылка' in msg.text:
-                                await  bot.send_message(msg.chat.id,'Выберите действие',reply_markup=mailmenu())
-                            elif 'Прайслист' in msg.text:
-                                await  bot.send_message(msg.chat.id, '<b>Мой Прайслист</b>\n\nВыберите действие',
+                                if msg.from_user.id in all_admins():
+                                    await  bot.send_message(msg.chat.id,'Раздел Рассылок',reply_markup=mailmenu())
+                            elif 'Автопродажи' in msg.text:
+                                await  bot.send_message(msg.chat.id, autocall_text,
                                                         parse_mode='html',
-                                                        reply_markup=pricelistmenu())
+                                                        reply_markup=pricelistmenu(msg.chat.id))
                             else:
                                  await bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
 
@@ -1030,81 +1032,131 @@ async def clientside(bot):
                                 message += f"<b>{product.capitalize()}</b> : {int(price)} ₽\n"
                             return message
 
-                        data = get_products_data(callback.from_user.id)
+                        data = get_products_data(callback.from_user.id,callback.from_user.username)
                         formatted_message = format_products_data(data)
                         await  bot.send_message(callback.message.chat.id, formatted_message,parse_mode='html')
-
+                    elif callback.data == 'autocall_on':
+                        if prem_status(callback.from_user.id)==False:
+                            await  bot.send_message(callback.message.chat.id, premium_offer_autocall, parse_mode='html')
+                        else:
+                            autocall_status(callback.from_user.id,'change')
+                            await bot.edit_message_text(autocall_text,callback.message.chat.id,callback.message.id,
+                                                    parse_mode='html',
+                                                    reply_markup=pricelistmenu(callback.from_user.id))
+                    elif callback.data == 'autocall_off':
+                        autocall_status(callback.from_user.id,'change')
+                        await bot.edit_message_text(autocall_text,callback.message.chat.id,callback.message.id,parse_mode='html',
+                                                    reply_markup=pricelistmenu(callback.from_user.id))
         bot.add_custom_filter(asyncio_filters.StateFilter(bot))
         await bot.polling(non_stop=True)
 
 
+async def autocall_with_interval(auto_call_bot, chat_id, text, interval):
+    await asyncio.sleep(interval)
+    try:
+        await auto_call_bot.send_message(chat_id=chat_id, text=text, disable_web_page_preview=True)
+
+    except Exception as e:
+        task_list.append(autocall_with_interval(auto_call_bot, chat_id, text, interval))
+
+async def autocall_side(auto_call_bot):
 
 
 
-async def serverside(app):
-    # автоответ
-    async  def recall_pricelist(msg):
-        print('дошло')
-        tasks=await checking_products_bd(msg)
-        # parse_mode='Markdown'
-        for task in tasks:
-            items,seller,customer=task
 
-            price_offer=f'Предложение от [{seller}](https://t.me/{seller}):\n\n'
-            for item in items:
-                price_offer+=f'{item[0].capitalize() }: {int(item[1])}\n'
-            print(price_offer)
-            await asyncio.sleep(2)
-            await app.send_message(chat_id=customer,text=price_offer)
+    @auto_call_bot.on_message()
+    async def print_msg(message):
+        print(message,'oguzok')
 
 
-    async def send_message_with_interval(app, chat_id, text, interval):
 
+
+
+
+
+
+
+
+async def send_message_with_interval(app, chat_id, text, interval):
         await asyncio.sleep(interval)
         try:
-            await app.send_message(chat_id=chat_id, text=text)
+            await app.send_message(chat_id=chat_id, text=text,disable_web_page_preview=True,parse_mode='html')
 
         except Exception as e:
             task_list.append(send_message_with_interval(app,chat_id,text,interval))
+
+async def serverside(app):
+    # автоответ
+
+
+    async  def recall_pricelist(msg):
+        print('дошло')
+        tasks=checking_products_bd(msg)
+        do=None
+        for deal in tasks:
+            if len(deal[0])==0:
+                do=None
+            else:
+                do=True
+                break
+        if do is True:
+        # parse_mode='Markdown'
+            price_offer = (f'<b>Добрый день! Мы собрали специально для вас наиболее интересные предложения по вашему '
+                           f'запросу от '
+                           f'продавцов '
+                           f'Горбушки</b>\n')
+            customers = tasks[0][2]
+            for task in tasks:
+                items,seller,customer=task
+                price_offer+=f'\n<b>Предложение от</b> <i><b>[{seller}](https://t.me/{seller})</b></i>:\n\n'
+                for item in items:
+                    price_offer+=f'<b>{item[0].capitalize() } : {int(item[1])}</b>\n'
+
+                print(price_offer)
+                await asyncio.sleep(2)
+            auto_call_process.append(autocall_with_interval(auto_call_bot, customers,
+                                                            price_offer, 2))
+
+        else:pass
+
+
 
 
     @app.on_message()
     async def forward_to_private_chat(app, message):
         chat_ids = [-1001995766142, -1002018161709, -1002091805379, -1001869659170, -1002101187519, -1002011356796, -1001995187845, -1002057441036, -1002049302049, -1002014932385, -1002060439501]
         # print(message)
-        
-        if int(message.chat.id) not in chat_ids:
+        if message.chat.id==-4010327668:
+            if int(message.chat.id) not in chat_ids:
 
-                user_id=message.from_user.id
-                text=str(message.text).lower()
-                resolve=json.loads(str(message.from_user))
-                global last_message_len
-                # print(last_message_len)
-                if last_message_len==len(text):
-                    # print('equal')
-                    pass
-                else:
+                    user_id=message.from_user.id
+                    text=str(message.text).lower()
+                    resolve=json.loads(str(message.from_user))
+                    global last_message_len
+                    # print(last_message_len)
+                    if last_message_len==len(text):
+                        # print('equal')
+                        pass
+                    else:
 
-                    if 'username' in resolve.keys():
-                            if 'bot' not in text :
-                                usrnm = message.from_user.username
-                                if any(keyword in text for keyword in ['куплю', 'предложите', 'ищу','?','купить',
-                                                                               'buy','ищу']):
-                                    await recall_pricelist(message)
-                                    # print('-------------\n',resolve['username'])
-                                    # print(message.text)
-                                    random.shuffle(chat_ids)
+                        if 'username' in resolve.keys():
+                                if 'bot' not in text :
+                                    usrnm = message.from_user.username
+                                    if any(keyword in text for keyword in ['куплю', 'предложите', 'ищу','?','купить',
+                                                                                   'buy','ищу']):
+                                        await recall_pricelist(message)
+                                        # print('-------------\n',resolve['username'])
+                                        # print(message.text)
+                                        random.shuffle(chat_ids)
 
-                                    # Выбираем случайный элемент из перемешанного списка
-                                    random_chat_id = int(chat_ids[0])
+                                        # Выбираем случайный элемент из перемешанного списка
+                                        random_chat_id = int(chat_ids[0])
 
-                                    task_list.append(send_message_with_interval(app,  random_chat_id,
-                                        f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 0.1))
-                                    last_message_len=len(text)
+                                        task_list.append(send_message_with_interval(app,  random_chat_id,
+                                            f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 0.1))
+                                        last_message_len=len(text)
 
-    pass
-async def autoseller(seller_bot):
-    pass
+        pass
 
 
 
@@ -1117,7 +1169,7 @@ async def autoseller(seller_bot):
 
 
 
-
+# автокол свкрху прикуртить
 async def checking ():
     global wait_seconds
     wait_seconds=1
@@ -1125,10 +1177,10 @@ async def checking ():
 
     while True:
         from pyrogram.errors.exceptions.flood_420 import FloodWait
-        first_len = len(task_list)
+        first_len_task = len(task_list)
 
         await asyncio.sleep(5)
-            # print('таски=',task_list,len(task_list))
+        print('таски=',task_list,len(task_list))
 
         if len(task_list)>5 or first_len==len(task_list) or len(task_list)-first_len<4 :
                 for task in task_list.copy():
@@ -1140,16 +1192,37 @@ async def checking ():
 
                     except Exception :
                         pass
+        autocall_first_len = len(auto_call_process,)
+
+        await asyncio.sleep(5)
+        print('автоответчик=', auto_call_process, len(auto_call_process))
+
+        if (len(auto_call_process) > 5 or autocall_first_len == len(auto_call_process) or len(auto_call_process) - first_len
+            < 4):
+            for autocall_task in auto_call_process.copy():
+                await asyncio.sleep(wait_seconds)
+                try:
+                    await autocall_task
+                    auto_call_process.remove(autocall_task)
+                    wait_seconds = 1
+
+                except Exception:
+                    pass
+
 
 
 
 
 async def main():
     global task_list
+    global auto_call_process
+    global auto_call_bot
     task_list=[]
-    app = Client("salesbot")
+    auto_call_process=[]
+    app = Client("Gorbushkin_resender")
     bot = AsyncTeleBot(token=token_test_02,
                        state_storage=STM())
+    auto_call_bot=Client('salesbot')
     scheduler = BackgroundScheduler()
     # обнулятор статистики не трогать
     def reset_column_values():
@@ -1170,7 +1243,8 @@ async def main():
 
 
     await asyncio.gather (asyncio.create_task(checking()),
-                          asyncio.create_task(clientside(bot)),asyncio.create_task(serverside(await app.start())))
+                          asyncio.create_task(clientside(bot)),asyncio.create_task(serverside(await app.start())),
+                          asyncio.create_task(autocall_side(await auto_call_bot.start())))
 
 
     # Запуск бота в бесконечном цикле

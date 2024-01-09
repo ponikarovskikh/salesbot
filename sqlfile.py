@@ -39,11 +39,11 @@ def create_table_and_insert_data(user_id, data,username=None):
 
 
 
-def get_products_data(user_id):
+def get_products_data(user_id,username):
     conn = sqlite3.connect('Seller_db.db')
     cursor = conn.cursor()
 
-    cursor.execute(f"SELECT product, price FROM price_{user_id}")
+    cursor.execute(f"SELECT product, price FROM price_{user_id}_{username}")
     data = cursor.fetchall()
 
     conn.close()
@@ -51,47 +51,88 @@ def get_products_data(user_id):
 
 
 # и тут автоответчик
-async def checking_products_bd(msg):
-    conn = sqlite3.connect('Seller_db.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    tables=[x[0] for x in cursor.fetchall()]
-    tasks=[]
-    customer = msg.from_user.username  # покупатель
-    for table in tables:
-        # от каждого продавца
-        # print(table)
-        seller=table.split('_')[2]
+def checking_products_bd(msg=None,action=None):
+    if action=='get':
+        conn = sqlite3.connect('Seller_db.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [x[0] for x in cursor.fetchall()]
+        return tables
+    else:
 
-        cursor.execute(f"SELECT product, price FROM {table}")
-        rows = cursor.fetchall()
-        # print(rows)
-        combo_price=[]
-        for row in rows:
-            product_items=row[0]
-            #
-            # print(product_items)
+        conn = sqlite3.connect('Seller_db.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [x[0] for x in cursor.fetchall()]
+        conn = sqlite3.connect('bot_db.db')
+        cursor = conn.cursor()
+        cursor.execute(f'SELECT user_id  FROM users WHERE autocall=1')
 
-            if ' ' in  product_items:
-                product_items= product_items.replace('  ', ' ')
-                product_items=product_items.split(' ')
-
+        users_autocall = [str(x[0]) for x in cursor.fetchall()]
+        # print(tables,users_autocall)
+        tables = [element for element in tables if any(str(sub) in element for sub in users_autocall)]
+        # print(tables)
+        tasks=[]
+        customer = msg.from_user.username  # покупатель
+        for table in tables:
+            # от каждого продавца
+            # print(table)
+            seller=table.split('_')[2]
+            conn = sqlite3.connect('Seller_db.db')
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT product, price FROM {table}")
+            rows = cursor.fetchall()
+            # print(rows)
+            combo_price=[]
+            for row in rows:
+                product_items=row[0].lower()
+                #
                 # print(product_items)
-            else:
-                product_items=[product_items]
-                # print(product_items)
-            need_send=[]
-            for item in product_items:
-                if item in msg.text.lower():
-                    need_send.append(1)
 
-            if len(product_items)==len(need_send):
-                combo_price.append(row)
-        tasks.append((combo_price,seller,customer))
+                if ' ' in  product_items:
+                    product_items= product_items.replace('  ', ' ')
+                    product_items=product_items.split(' ')
 
-    return tuple(tasks)
+                    # print(product_items)
+                else:
+                    product_items=[product_items]
+                    # print(product_items)
+                need_send=[]
+                for item in product_items:
+                    if item in msg.text.lower():
+                        need_send.append(1)
+
+                if len(product_items)==len(need_send):
+                    combo_price.append(row)
+            tasks.append((combo_price,seller,customer))
+
+        return tuple(tasks)
 
                 # return row
+# print(checking_products_bd())
+def autocall_status(user_id,action=None):
+    # еще проверка на премиум
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    if action=='get':
+        cursor.execute(f'SELECT autocall  FROM users WHERE user_id="{user_id}"')
+        result=cursor.fetchone()
+        return result[0]
+    elif action =="change":
+        cursor.execute(f'SELECT autocall  FROM users WHERE user_id="{user_id}"')
+        result = cursor.fetchone()[0]
+        if result ==0:
+            cursor.execute('UPDATE users SET autocall=? WHERE user_id = ?', (1, user_id))
+            conn.commit()
+            return 'changed'
+        else:
+            cursor.execute('UPDATE users SET autocall=? WHERE user_id = ?', (0, user_id))
+            conn.commit()
+            return 'changed'
+
+
+# print(autocall_status('704718950','change'))
+
 
 
 
@@ -618,7 +659,7 @@ def profit_calc():
 
 
 
-
+# Премиум
 def prem_status(user_id):
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
@@ -665,7 +706,7 @@ def out_premium_check(user_id,action=None):
 
 
 
-
+# принимать сообщ вкл/выкл
 def getchangeplaystatus(user_id=None,action=None):
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()

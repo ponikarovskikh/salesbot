@@ -45,14 +45,15 @@ def menu_keyboard_2stage(user_id):
     keyboard.row(func4,func5)
     keyboard.row(func6,func7)
     func10=types.KeyboardButton("Статистика запросов📈")
+    func12 = types.KeyboardButton('Автопродажи')
+    keyboard.row(func12)
     keyboard.row(func10)
     if user_id in all_admins():
         func8 = types.KeyboardButton('Изменить цену Premium')
         func9 = types.KeyboardButton('Сводка')
         func11 = types.KeyboardButton('Рассылка')
         keyboard.row(func8,func11,func9)
-        func12 = types.KeyboardButton('Прайслист')
-        keyboard.row(func12)
+
 
 
     return keyboard
@@ -379,15 +380,29 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
                             # print(buttons)
         return markup
 
-def pricelistmenu(action=None):
-        return quick_markup(
-            {
+def pricelistmenu(user_id,action=None):
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        tables= checking_products_bd(user_id,'get')
+        print(tables)
+        usertable = any(str(user_id) in element for element in tables)
+        print(usertable)
+        if usertable is True:
+            b1=InlineKeyboardButton(text='🔽Загрузить новый',callback_data='upload_pricelist')
+            b2=InlineKeyboardButton(text='🕒Текущий',callback_data='get_pricelist')
+            markup.add(b1,b2,row_width=2)
+            if autocall_status(user_id,'get')==True:
+                # ☑️✅✔️➿.
+                b3 = InlineKeyboardButton('✅Автоответчик', callback_data='autocall_off')
+            else:
+                b3 = InlineKeyboardButton('Автоответчик', callback_data='autocall_on')
+            markup.add(b3)
+        elif usertable is False:
+            b1=InlineKeyboardButton(text='🔽Загрузить',callback_data='upload_pricelist')
+            markup.add(b1)
+        return markup
 
-                'Загрузить новый': {'callback_data': f'upload_pricelist'},
-                'Текущий ': {'callback_data': f'get_pricelist'}
 
-            }, row_width=2
-        )
+
 
 
 
