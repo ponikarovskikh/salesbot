@@ -692,7 +692,7 @@ async def clientside(bot):
         @bot.callback_query_handler(func=lambda callback:callback.data)
         async def callback_logic(callback):
                     # print(callback.data)
-                    # /логика бана
+                    # логика бана
                     if callback.data == 'banlist_show':
                             blocklist = add_delete_get_clear_blocked_users(user_id=callback.message.chat.id, action='getall')
                             if len(blocklist) == 0:
@@ -702,7 +702,6 @@ async def clientside(bot):
                                  await bot.edit_message_text(f'⛔ Заблокированные люди от которых теперь вы не получаете сообщений в боте:\n\nОчистить всех /banlist_clear\n\nУдалить человека из Блок-листа - выберите пользователя ниже',
                                                   callback.message.chat.id,
                                                     callback.message.id, reply_markup=banlistmarkup(callback.message.chat.id,blocklist))
-
                     elif str(callback.data).startswith('ban_') and not str(callback.data).endswith("_banlist"):
                         print(callback.data)
                         clback=callback.data.split('_')
@@ -732,7 +731,6 @@ async def clientside(bot):
                                     await bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,
                                                           callback.message.id,reply_markup=unblock_keyboard(block_id,
                                                                                                             block_name,None))
-
                     elif str(callback.data).startswith('ban_')  and str(callback.data).endswith("_banlist"):
                         # print("ban_banlist")
                         clback=callback.data.split('_')
@@ -758,7 +756,6 @@ async def clientside(bot):
                                     f' ⚠️Ошибка! {block_name} уже нет в списке или раннее вы его разблокировали',
                                     callback.message.chat.id, callback.message.id,
                                     reply_markup=menu_keyboard_2stage(callback.message.from_user.id))
-
                     elif str(callback.data).startswith('unban_') and not str(callback.data).endswith("_banlist"):
                         print('unban 1')
                         print(callback)
@@ -796,25 +793,24 @@ async def clientside(bot):
                                 # print(unblock_id, 'Eсть в списке')
                                     if add_delete_get_clear_blocked_users(unblock_id, unblock_name, callback.message.chat.id, 'delete') == 2:
                                         await bot.edit_message_text(f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения', callback.message.chat.id, callback.message.id, reply_markup=block_keyboard(block_id=unblock_id,block_name=unblock_name,banlist=True))
-
+                    # ключ слово логика
                     elif callback.data=="add_keyword":
                         await  add_delete_keyword_handler(callback)
                     elif callback.data in 'delete_keywords':
                         await kwrd_list_del(callback)
                          #временная раздача халявы
+                    # премиум логика
                     elif callback.data == "free_premium":
                         await bot.delete_message(callback.message.chat.id, callback.message.id )
                         if controling_premium(callback.message.chat.id, True) in [2, 1]:
                            await bot.send_message(callback.message.chat.id, premium_bonus, parse_mode='HTML')
-
+                    # выбор товара choosed-item
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepyear'):
                         product_name=callback.data.split('_')[1]
                         await bot.edit_message_text(
                             'Какие сообщения по товарам получать?',
                             callback.message.chat.id, callback.message.id,parse_mode="HTML",
                             reply_markup=choosing_keyboard_proccess(callback.message.chat.id,'year',callback.data,{f'{product_name}':f'✅'}))
-
-
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepmemory'):
                         # product_name = callback.data.split('_')[1]
                         # product_year = callback.data.split('_')[2]
@@ -826,7 +822,6 @@ async def clientside(bot):
                             'Какие сообщения по товарам получать?',
                         callback.message.chat.id, callback.message.id, parse_mode = "HTML",
                         reply_markup = choosing_keyboard_proccess(callback.message.chat.id, 'memory', callback.data))
-
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_add'):
                         # print(callback.data)
                         product_name = callback.data.split('_')[1]
@@ -893,8 +888,6 @@ async def clientside(bot):
                         #         bot.edit_message_text(
                         #          f'<b>Лимит на добавление ключевых слов превышен❌ </b>\n\n'+Text_of_messages.premium_offer,
                         #                 callback.message.chat.id, callback.message.id, parse_mode="HTML")
-
-
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_delete'):
                         # print(callback.data)
                         product_name = callback.data.split('_')[1]
@@ -915,37 +908,48 @@ async def clientside(bot):
                         reply_markup = choosing_keyboard_proccess(callback.message.chat.id,
                                                                   level='memory',
                                                                   construct=f'construct_{product_name}_{product_year}_stepmemory'))
-
                     # блок рассылки
                     elif callback.data=='reject_new_mail':
-                            await bot.delete_message(callback.message.chat.id,callback.message.id)
+                            print(callback.data)
+                            await bot.edit_message_text(f"Мои рассылки\n\nВыберите рассылку ", callback.message.chat.id,
+                                                        callback.message.id,
+                                                        reply_markup=mail_list_db_kb(action='list'))
+                            # await bot.delete_message(callback.message.chat.id,callback.message.id)
                             await bot.delete_state(callback.from_user.id, callback.message.chat.id)
                     elif callback.data == 'change_name_mail':
+                        print(callback.data)
+
                         await bot.edit_message_text('Наберите новое название для рассылки', callback.message.chat.id,
                                                     callback.message.id)
                         await bot.set_state(callback.from_user.id,SuperStates.getnamemail,callback.message.chat.id)
                     elif callback.data=='change_content_mail':
+                        print(callback.data)
+
                         await bot.edit_message_text('Наберите новый текст для рассылки', callback.message.chat.id,
                                                     callback.message.id)
                         await bot.set_state(callback.from_user.id,SuperStates.getсontentmail,callback.message.chat.id)
                     elif callback.data == 'add_list_mail':
+                        print(callback.data)
+
                         async with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
                             print(data,'clbck')
                             if mail_db(data['namemail'],data['contentmail'],action='add') =="added":
-                                await bot.send_message(callback.message.chat.id, "Рассылка добавлена",
+
+                                await bot.edit_message_text( "Рассылка добавлена",callback.message.chat.id,
+                                                             callback.message.id,
                                                        reply_markup=mailmenu())
-                                await bot.delete_message(callback.message.chat.id, callback.message.id)
+                                # await bot.delete_message(callback.message.chat.id, callback.message.id)
                                 await bot.delete_state(callback.from_user.id, callback.message.chat.id)
 
                             else:
-                                await bot.delete_message(callback.message.chat.id,callback.message.id)
-                                await bot.send_message(callback.message.chat.id, f"Рассылка с таким именем {data['namemail']} "
+                                # await bot.delete_message(callback.message.chat.id,callback.message.id)
+                                await bot.edit_message_text( f"Рассылка с таким именем {data['namemail']} "
                                                                                  "уже существует.\nЗамените имя и "
-                                                                                 "отправьте "
-                                                                                 )
+                                                                                 "отправьте ",
+                                                             callback.message.chat.id,callback.message.id )
                                 await bot.set_state(callback.from_user.id,SuperStates.getnamemail,callback.message.chat.id)
                     elif callback.data=='add_mail_item':
-                        print(callback,'----------')
+                        print(callback.data)
                         await bot.edit_message_text('Напишите название вашей будущей рассылки',
                                                     callback.message.chat.id, callback.message.id)
                         await bot.set_state(callback.from_user.id,SuperStates.getnamemail,callback.message.chat.id)
@@ -978,6 +982,8 @@ async def clientside(bot):
                                                parse_mode='html',
                                                reply_markup=mailopenmenu(name))
                     elif callback.data=='my_mail_list':
+                        print(callback.data)
+
                         if len( mail_db(action='list'))>0:
                             await bot.edit_message_text(f"Мои рассылки\n\nВыберите рассылку ",callback.message.chat.id,callback.message.id,
                                                reply_markup=mail_list_db_kb(action='list'))
@@ -986,22 +992,28 @@ async def clientside(bot):
                              callback.message.chat.id,callback.message.id,
                                                    reply_markup=mail_list_db_kb(action='back'))
                     elif callback.data == 'my_mail_menu':
+                        print(callback.data)
+
                         await bot.edit_message_text('Выберите действие',callback.message.chat.id,callback.message.id,
                                                     reply_markup=mailmenu())
                     elif callback.data.startswith('mail_open_'):
                         print(callback.data)
                         name=callback.data.split("_")[2]
                         text=mail_db(namemail=name,action='get')
-                        await bot.send_message(callback.message.chat.id, f"Рассылка <b>{name.capitalize()}</b>\n\n{text}",
+                        await bot.edit_message_text( f"Рассылка <b>{name.capitalize()}</b>\n\n{text}",
+                                                     callback.message.chat.id,callback.message.id,
                                                parse_mode='html',
                                                reply_markup=mailopenmenu(name))
                     elif callback.data.startswith('mail_delete_'):
+                        print(callback.data)
+
                         name = callback.data.split("_")[2]
                         if mail_db(namemail=name,action='delete')=='delete':
-                            await bot.send_message(callback.message.chat.id,
-                                                   f"Рассылка <b>{name.capitalize()}</b> удалена",
-                                                   parse_mode='html',
-                                                   )
+                            # await bot.edit_message_text(f"Рассылка <b>{name.capitalize()}</b> удалена",
+                            #                         callback.message.chat.id,callback.message.id,
+                            #                        parse_mode='html',reply_markup=mail_list_db_kb('list')
+                            #                        )
+
 
                             if len(mail_db(action='list')) > 0:
                                 await bot.edit_message_text(f"Рассылка <b>{name.capitalize()}</b> удалена\n\nВыберите рассылку ",
@@ -1013,7 +1025,7 @@ async def clientside(bot):
                                                             callback.message.chat.id, callback.message.id,
                                                             reply_markup=mail_list_db_kb(action='back'))
                         await bot.delete_state(callback.from_user.id, callback.message.chat.id)
-        #                 блок прайслист
+                      # блок прайслист
                     elif callback.data=='upload_pricelist':
                         await bot.send_message(callback.message.chat.id,
                                                f"<b>Загрузите ваш прайслист в формате EXCEL-файла</b>\n\n"
@@ -1023,8 +1035,6 @@ async def clientside(bot):
                                                parse_mode='html'
                                                )
                         await bot.set_state(callback.from_user.id, SuperStates.getpricelist, callback.message.chat.id)
-
-
                     elif callback.data=='get_pricelist':
                         def format_products_data(data):
                             message = "<u><b>Ваш текущий прайслист</b></u>💰\n\n"
@@ -1080,9 +1090,10 @@ async def autocall_side(auto_call_bot):
 async def send_message_with_interval(app, chat_id, text, interval):
         await asyncio.sleep(interval)
         try:
-            await app.send_message(chat_id=chat_id, text=text,disable_web_page_preview=True,parse_mode='html')
+            await app.send_message(chat_id=chat_id, text=text,disable_web_page_preview=True)
 
         except Exception as e:
+            print(e)
             task_list.append(send_message_with_interval(app,chat_id,text,interval))
 
 async def serverside(app):
@@ -1101,9 +1112,8 @@ async def serverside(app):
                 break
         if do is True:
         # parse_mode='Markdown'
-            price_offer = (f'<b>Добрый день! Мы собрали специально для вас наиболее интересные предложения по вашему '
-                           f'запросу от '
-                           f'продавцов '
+            price_offer = (f'<b>Добрый день! Мы собрали для вас интересные предложения по вашему запросу '
+                           f'от '
                            f'Горбушки</b>\n')
             customers = tasks[0][2]
             for task in tasks:
@@ -1115,18 +1125,19 @@ async def serverside(app):
                 print(price_offer)
                 await asyncio.sleep(2)
             auto_call_process.append(autocall_with_interval(auto_call_bot, customers,
-                                                            price_offer, 2))
+                                                            price_offer, 1))
 
         else:pass
 
 
 
-
+    # проверки на ник в таблице и рассылку почистить от сообщений
     @app.on_message()
     async def forward_to_private_chat(app, message):
         chat_ids = [-1001995766142, -1002018161709, -1002091805379, -1001869659170, -1002101187519, -1002011356796, -1001995187845, -1002057441036, -1002049302049, -1002014932385, -1002060439501]
-        # print(message)
+
         if message.chat.id==-4010327668:
+        #     print(message)
             if int(message.chat.id) not in chat_ids:
 
                     user_id=message.from_user.id
@@ -1144,7 +1155,7 @@ async def serverside(app):
                                     usrnm = message.from_user.username
                                     if any(keyword in text for keyword in ['куплю', 'предложите', 'ищу','?','купить',
                                                                                    'buy','ищу']):
-                                        await recall_pricelist(message)
+                                        # await recall_pricelist(message)
                                         # print('-------------\n',resolve['username'])
                                         # print(message.text)
                                         random.shuffle(chat_ids)
@@ -1156,7 +1167,7 @@ async def serverside(app):
                                             f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 0.1))
                                         last_message_len=len(text)
 
-        pass
+            pass
 
 
 
@@ -1172,15 +1183,15 @@ async def serverside(app):
 # автокол свкрху прикуртить
 async def checking ():
     global wait_seconds
-    wait_seconds=1
+    wait_seconds=2
     first_len=0
 
     while True:
         from pyrogram.errors.exceptions.flood_420 import FloodWait
         first_len_task = len(task_list)
 
-        await asyncio.sleep(5)
-        print('таски=',task_list,len(task_list))
+        # await asyncio.sleep(5)
+        # print('таски=',task_list,len(task_list))
 
         if len(task_list)>5 or first_len==len(task_list) or len(task_list)-first_len<4 :
                 for task in task_list.copy():
@@ -1188,14 +1199,14 @@ async def checking ():
                     try:
                             await task
                             task_list.remove(task)
-                            wait_seconds=1
+                            wait_seconds=2
 
                     except Exception :
-                        pass
+                        print(Exception)
         autocall_first_len = len(auto_call_process,)
 
-        await asyncio.sleep(5)
-        print('автоответчик=', auto_call_process, len(auto_call_process))
+        await asyncio.sleep(wait_seconds)
+        # print('автоответчик=', auto_call_process, len(auto_call_process))
 
         if (len(auto_call_process) > 5 or autocall_first_len == len(auto_call_process) or len(auto_call_process) - first_len
             < 4):
@@ -1204,7 +1215,7 @@ async def checking ():
                 try:
                     await autocall_task
                     auto_call_process.remove(autocall_task)
-                    wait_seconds = 1
+                    wait_seconds = 2
 
                 except Exception:
                     pass
@@ -1220,7 +1231,7 @@ async def main():
     task_list=[]
     auto_call_process=[]
     app = Client("Gorbushkin_resender")
-    bot = AsyncTeleBot(token=token_test_02,
+    bot = AsyncTeleBot(token=token_GorbushkinService,
                        state_storage=STM())
     auto_call_bot=Client('salesbot')
     scheduler = BackgroundScheduler()

@@ -14,7 +14,7 @@ def example_kb():
 
             return inline_keyboard
 
-
+# 🧩🧩📧📨✉📩📬
 
 
 
@@ -105,7 +105,7 @@ def mail_list_db_kb(action=None):
     elif action=='back':
         return quick_markup(
             {
-                'Назад': {'callback_data': f'my_mail_menu'},
+                'Назад↩️': {'callback_data': f'my_mail_menu'},
 
             }, row_width=2
         )
@@ -118,24 +118,23 @@ def mailmenu(action=None):
         return quick_markup(
         {
 
-        'Добавить рассылку': {'callback_data': f'add_mail_item'},
-        'Мои рассылки':{'callback_data': f'my_mail_list'}
+        'Добавить рассылку📍': {'callback_data': f'add_mail_item'},
+        'Мои рассылки🗃':{'callback_data': f'my_mail_list'}
 
-        }, row_width=2
+        }, row_width=1
     )
 
 
 def addmail_reject(action=None):
-    return quick_markup(
-        {
-
-            '✅Добавить в список рассылок': {'callback_data': f'add_list_mail'},
-            '↩️Задать другое название': {'callback_data': f'change_name_mail'},
-            '↩️Заменить текст': {'callback_data': f'change_content_mail'},
-            '❌Отменить добавление': {'callback_data': f'reject_new_mail'}
-        }, row_width=2
-    )
-
+    markup = types.InlineKeyboardMarkup(row_width=3)
+    button1 = types.InlineKeyboardButton(text='✅Добавить', callback_data='add_list_mail')
+    button2 = types.InlineKeyboardButton(text='↩️Заменить имя', callback_data='change_name_mail')
+    button3 = types.InlineKeyboardButton(text= '↩️Заменить текст', callback_data='change_content_mail')
+    button4 = types.InlineKeyboardButton(text='❌Отменить', callback_data='reject_new_mail')
+    markup.row(button2,button3)
+    markup.row(button4)
+    markup.row(button1)
+    return markup
 
 
 
@@ -206,7 +205,7 @@ def unblock_keyboard(block_id,block_name,banlist=None):
     if banlist == True:
         return quick_markup({
 
-            'Разблокировать человека🔑': {'callback_data': f'unban_{block_id}_{block_name}_banlist'},
+            'Разблокировать🔑': {'callback_data': f'unban_{block_id}_{block_name}_banlist'},
             'Назад↩️':{'callback_data': f'banlist_show'}}, row_width=1)
 
     else:

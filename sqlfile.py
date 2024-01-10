@@ -148,7 +148,7 @@ def mail_db(namemail=None,contentmail=None,action=None):
     if action =='add':
         cursor.execute('SELECT name_mail  FROM mailing')
         result=cursor.fetchall()
-        print(result)
+        # print(result)
         if namemail not in [x[0] for x in result]:
             cursor.execute(
             'INSERT INTO mailing (name_mail,caption) VALUES (?,?)',
@@ -243,7 +243,7 @@ def addinf_pos(product_name=None,text=None,priorities=None,action=None):
                     else:
                         need_add.append(0)
                 if 0 not in need_add or (0 in need_add and guarantee>=2 )  :
-                    print(product,need_add,guarantee)
+                    # print(product,need_add,guarantee)
                     cursor.execute("UPDATE stats SET query_count = query_count + 1 WHERE product = ?", (product,))
                     conn.commit()
         elif text is None and priorities is None:
@@ -800,11 +800,14 @@ russiandict={
     "плюс":"plus",
     "айфон":"iphone",
     "натурал":"natural",
-    "вайт":"white",
-    "блэк":"black",
-    "грин":"green",
+    "белый":"white",
+    "starlight":'белый',
+    "черный":"black",
+    "зеленый":"green",
     "синий":"blue",
-    "голубой":"blue"
+    "голубой":"blue",
+    'розовый':'rose',
+    'pink':'rose'
 
 }
 
