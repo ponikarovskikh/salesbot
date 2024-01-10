@@ -1069,14 +1069,7 @@ async def autocall_with_interval(auto_call_bot, chat_id, text, interval):
     except Exception as e:
         task_list.append(autocall_with_interval(auto_call_bot, chat_id, text, interval))
 
-async def autocall_side(auto_call_bot):
 
-
-
-
-    @auto_call_bot.on_message()
-    async def print_msg(message):
-        print(message,'oguzok')
 
 
 
@@ -1113,7 +1106,7 @@ async def serverside(app):
         if do is True:
         # parse_mode='Markdown'
             price_offer = (f'<b>Добрый день! Мы собрали для вас интересные предложения по вашему запросу '
-                           f'от '
+                           f'с '
                            f'Горбушки</b>\n')
             customers = tasks[0][2]
             for task in tasks:
@@ -1124,7 +1117,7 @@ async def serverside(app):
 
                 print(price_offer)
                 await asyncio.sleep(2)
-            auto_call_process.append(autocall_with_interval(auto_call_bot, customers,
+            auto_call_process.append(autocall_with_interval(app, customers,
                                                             price_offer, 1))
 
         else:pass
@@ -1134,9 +1127,8 @@ async def serverside(app):
     # проверки на ник в таблице и рассылку почистить от сообщений
     @app.on_message()
     async def forward_to_private_chat(app, message):
-        chat_ids = [-1001995766142, -1002018161709, -1002091805379, -1001869659170, -1002101187519, -1002011356796, -1001995187845, -1002057441036, -1002049302049, -1002014932385, -1002060439501]
 
-        if message.chat.id==-4010327668:
+        # if message.from_user.id==704718950:
         #     print(message)
             if int(message.chat.id) not in chat_ids:
 
@@ -1155,7 +1147,7 @@ async def serverside(app):
                                     usrnm = message.from_user.username
                                     if any(keyword in text for keyword in ['куплю', 'предложите', 'ищу','?','купить',
                                                                                    'buy','ищу']):
-                                        # await recall_pricelist(message)
+                                        await recall_pricelist(message)
                                         # print('-------------\n',resolve['username'])
                                         # print(message.text)
                                         random.shuffle(chat_ids)
@@ -1203,7 +1195,7 @@ async def checking ():
 
                     except Exception :
                         print(Exception)
-        autocall_first_len = len(auto_call_process,)
+        autocall_first_len = len(auto_call_process)
 
         await asyncio.sleep(wait_seconds)
         # print('автоответчик=', auto_call_process, len(auto_call_process))
@@ -1228,12 +1220,16 @@ async def main():
     global task_list
     global auto_call_process
     global auto_call_bot
+    global chat_ids
     task_list=[]
     auto_call_process=[]
     app = Client("Gorbushkin_resender")
+    chat_ids = [-1001995766142, -1002018161709, -1002091805379, -1001869659170, -1002101187519, -1002011356796,
+                -1001995187845, -1002057441036, -1002049302049, -1002014932385, -1002060439501]
+
     bot = AsyncTeleBot(token=token_GorbushkinService,
                        state_storage=STM())
-    auto_call_bot=Client('salesbot')
+    # auto_call_bot=Client('salesbot')
     scheduler = BackgroundScheduler()
     # обнулятор статистики не трогать
     def reset_column_values():
@@ -1254,8 +1250,7 @@ async def main():
 
 
     await asyncio.gather (asyncio.create_task(checking()),
-                          asyncio.create_task(clientside(bot)),asyncio.create_task(serverside(await app.start())),
-                          asyncio.create_task(autocall_side(await auto_call_bot.start())))
+                          asyncio.create_task(clientside(bot)),asyncio.create_task(serverside(await app.start()))  )
 
 
     # Запуск бота в бесконечном цикле
