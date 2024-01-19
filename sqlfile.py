@@ -3,24 +3,6 @@ import json
 import sqlite3
 from datetime import datetime, timedelta
 
-# def createtable_users():
-#     conn = sqlite3.connect('bot_db.db')
-#     cursor = conn.cursor()
-#
-#     # Создание таблицы для хранения данных пользователей
-#     cursor.execute('''
-#         CREATE TABLE IF NOT EXISTS users (
-#             user_id INTEGER PRIMARY KEY,
-#             username TEXT,
-#             keywords TEXT,
-#             premium BOOLEAN DEFAULT FALSE,
-#             blocklist TEXT,
-#             keywords_limit INTEGER DEFAULT 1,
-#             play INTEGER DEFAULT 0
-#         )
-#     ''')
-#     conn.commit()
-#     conn.close()
 
 # pricelist blck
 
@@ -177,6 +159,23 @@ def mail_db(namemail=None,contentmail=None,action=None):
 
 #    List of all users
 
+
+
+# список админов и пользоват
+def all_admins():
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT admins_id FROM adminstable')
+    admins_list = cursor.fetchall()
+    admins=[]
+    for admin in admins_list:
+        for item in admin:
+            admins.append(item)
+    return admins
+
+# print(all_admins())
+
+
 def all_users_list(action=None):
     if action is None:
         conn = sqlite3.connect('bot_db.db')
@@ -199,26 +198,15 @@ def all_users_list(action=None):
 
 
 
+# статистика
 
-def all_admins():
-    conn = sqlite3.connect('bot_db.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT admins_id FROM adminstable')
-    admins_list = cursor.fetchall()
-    admins=[]
-    for admin in admins_list:
-        for item in admin:
-            admins.append(item)
-    return admins
-
-# print(all_admins())
-
-
-
-
-
-
-
+def reset_column_values():
+        # Функция для обнуления значений в колонке
+        conn = sqlite3.connect('bot_db.db')
+        cursor = conn.cursor()
+        cursor.execute(f"UPDATE stats SET query_count = 0")
+        conn.commit()
+        conn.close()
 
 def addinf_pos(product_name=None,text=None,priorities=None,action=None):
     conn = sqlite3.connect('bot_db.db')
@@ -268,7 +256,7 @@ def addinf_pos(product_name=None,text=None,priorities=None,action=None):
 
 
 
-
+# регистрация
 def add_users_field(user_id,username=None,chat_id=None):
     conn = sqlite3.connect('bot_db.db')
     cursor=conn.cursor()
@@ -614,7 +602,7 @@ def controling_premium(user_id:int,new_premium_status:bool):
 
 # print( controling_premium(user_id=704718950,new_premium_status=False    ))
 
-
+# финансовый блок
 
 def setprice(action=None,price=None):
     conn = sqlite3.connect('bot_db.db')
@@ -628,6 +616,46 @@ def setprice(action=None,price=None):
         cursor.execute('SELECT price FROM calc WHERE calc_id = 1 ')
         result=cursor.fetchone()
         return result[0]
+
+
+# обновление дня
+
+
+def daily_profit(user_id=None,bill:int=0,username=None):
+    conn=sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('UPDATE calc SET sum=sum+? ,quant_sold=quant_sold+1 WHERE calc_id = 1',
+                   (bill,))
+
+    conn.commit()
+    date_time = datetime.now().replace(microsecond=0)
+
+# Форматируем объект datetime для получения строки с датой
+    date_str = date_time.strftime("%Y-%m-%d")
+
+# Форматируем объект datetime для получения строки со временем
+    time_str = date_time.strftime("%H:%M:%S")
+
+    print(date_str, time_str)
+    cursor.execute(
+        'INSERT INTO payments (user_id, username,bill,date,time) VALUES (?,?,?,?,?)',
+        (user_id,username,bill,date_str,time_str))
+    conn.commit()
+
+print(daily_profit(704718950,100,'Sparjaolives'))
+
+#   обнова месяца
+def monthly_profit():
+    pass
+# бнова прошлого месяца
+def recent_monthly_profit():
+    pass
+# обнова года
+def year_profit():
+    pass
+#
+#
+
 def profit_calc():
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
@@ -801,7 +829,7 @@ russiandict={
     "айфон":"iphone",
     "натурал":"natural",
     "белый":"white",
-    "starlight":'белый',
+    "starlight":'white',
     "черный":"black",
     "зеленый":"green",
     "синий":"blue",

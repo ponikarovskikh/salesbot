@@ -346,26 +346,36 @@ async def clientside(bot):
 
         @bot.pre_checkout_query_handler(func=lambda query: True)
         async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
-            # print(pre_checkout_query)
+            print(pre_checkout_query)
             await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,error_message='Что-то не так')
 
 
         @bot.message_handler(content_types=['successful_payment'])
         async def process_successful_payment(msg: Message):
-            # print('successful_payment')
-            # print(msg)
+            print('successful_payment')
+            print(msg.successful_payment)
+            user_id=msg.successful_payment.invoice_payload.split('_')[2]
+            bill=int(msg.successful_payment.total_amount)/100
+
+            # print(date,user_id,amount/100)
+            daily_profit(user_id,bill,msg.from_user.username)
             # message=json.dumps(message,ensure_ascii=False)
             if str(msg.from_user.id).lower() in str(msg.successful_payment.invoice_payload):
                 if controling_premium(msg.from_user.id, new_premium_status=True) == 2:
                     await bot.send_message(msg.chat.id, premium_purchase_ok,
                                      parse_mode='HTML')
 
+
             elif str(msg.from_user.id).lower()  not in str(msg.successful_payment.invoice_payload):
-                user_pay=str(msg.successful_payment.invoice_payload)[12:]
-                # print(user_pay)
+                user_pay=str(msg.successful_payment.invoice_payload).split('_')[2]
+                print(user_pay)
                 if controling_premium(user_pay, new_premium_status=True) == 2:
                     await bot.send_message(msg.chat.id, premium_purchase_ok,
                                      parse_mode='HTML')
+
+
+
+
 
             # логика кнопок
 
@@ -435,12 +445,12 @@ async def clientside(bot):
                                                                  msg.chat.id))
                                 else:
                                     await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
-                                    # await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'Оплатить '
-                                    # #
-                                    # #                                                      f'Premium на 30 дней ',
-                                    # #                                                                    f'_{msg.from_user.id}',
-                                    # #                  token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
-                                    # #         'Купить', setprice('get') * 100)])
+                                    await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'Оплатить '
+
+                                                                                         f'Premium на 30 дней ',
+                                                                                                       f'successful_payment_{msg.from_user.id}',
+                                                     token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
+                                            'Купить', setprice('get') * 100)])
                             elif 'Руководство' in msg.text:
                                 await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
 
@@ -1094,7 +1104,7 @@ async def serverside(app):
 
 
     async  def recall_pricelist(msg):
-        print('дошло')
+        # print('дошло')
         tasks=checking_products_bd(msg)
         do=None
         for deal in tasks:
@@ -1115,7 +1125,7 @@ async def serverside(app):
                 for item in items:
                     price_offer+=f'<b>{item[0].capitalize() } : {int(item[1])}</b>\n'
 
-                print(price_offer)
+                # print(price_offer)
                 await asyncio.sleep(2)
             auto_call_process.append(autocall_with_interval(app, customers,
                                                             price_offer, 1))
@@ -1128,7 +1138,7 @@ async def serverside(app):
     @app.on_message()
     async def forward_to_private_chat(app, message):
 
-        # if message.from_user.id==704718950:
+        if message.from_user.id==704718950:
         #     print(message)
             if int(message.chat.id) not in chat_ids:
 
@@ -1232,13 +1242,7 @@ async def main():
     # auto_call_bot=Client('salesbot')
     scheduler = BackgroundScheduler()
     # обнулятор статистики не трогать
-    def reset_column_values():
-        # Функция для обнуления значений в колонке
-        conn = sqlite3.connect('bot_db.db')
-        cursor = conn.cursor()
-        cursor.execute(f"UPDATE stats SET query_count = 0")
-        conn.commit()
-        conn.close()
+
 
         # print(f"Значения в колонке  таблицы обнулены.")
 
