@@ -316,7 +316,7 @@ def all_users_list(action=None):
         return [x[0] for x in users_list]
 
 
-print(all_users_list())
+# print(all_users_list())
 # статистика
 
 def reset_column_values():
@@ -1170,3 +1170,26 @@ priorities={
 # with open(filename, 'a') as file:
 #     # Записываем строку в файл
 #     file.write(f"airpods_prio = {airpods_prio}\n")
+
+
+
+def stop_function(action=None):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT global_stop FROM func_controller WHERE id = 1')
+    result = bool(cursor.fetchone()[0])
+    if action is None:
+        return result
+    if action=='change':
+        print(result)
+        if result is True:
+            result=False
+        else:
+            result=True
+
+        cursor.execute('UPDATE func_controller  SET global_stop = ? WHERE id=1',
+                       (result,))
+        conn.commit()
+        return result
+
+stop_function()

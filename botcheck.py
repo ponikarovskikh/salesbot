@@ -98,16 +98,33 @@ async def clientside(bot):
                 await bot.send_message(msg.chat.id, f'Админ {new_seller_user} уже в списке продавцов')
                 await bot.delete_state(msg.from_user.id, msg.chat.id)
 
-        @bot.message_handler(commands=['admininfo'])
-        async def userslist(msg: Message):
-            admins=all_permissions()
-            if msg.from_user.id in admins:
-                all_users,all_users_play,users_premium_list=all_users_list()
-                # sum,price,last_month,quant_sold,last_year = profit_calc()
+        # @bot.message_handler(commands=['admininfo'])
+        # async def userslist(msg: Message):
+        #     admins=all_permissions()
+        #     if msg.from_user.id in admins:
+        #         all_users,all_users_play,users_premium_list=all_users_list()
+        #         # sum,price,last_month,quant_sold,last_year = profit_calc()
+        #
+        #         await bot.send_message(msg.chat.id,parametrs_info.format(all_users,all_users_play,users_premium_list
+        #                                                                  ),
+        #                                parse_mode='HTML')
 
-                await bot.send_message(msg.chat.id,parametrs_info.format(all_users,all_users_play,users_premium_list
-                                                                         ),
-                                       parse_mode='HTML')
+        @bot.message_handler(commands=['global_stop'])
+        async def global_stop(msg: Message):
+            if msg.from_user.id==704718950:
+                if stop_function('change') is True:
+                    text='Работает'
+                else:
+                    text='Приостановлен'
+                await bot.send_message(msg.chat.id,f'Функционал бота {text}',
+                                                                             parse_mode='HTML')
+
+
+
+
+
+
+
 
         @bot.message_handler(commands=['setprice'])
         async def pricesetinit(msg: Message):
@@ -199,6 +216,7 @@ async def clientside(bot):
 
         @bot.message_handler(commands=['start'])
         async def welcome(msg:Message):
+            if stop_function() is True:
                 if  'private' in msg.chat.type:
 
                     username = msg.from_user.username
@@ -218,41 +236,41 @@ async def clientside(bot):
 
 
 
-        @bot.message_handler(commands=['support'])
-        async def  support_handler(msg:Message):
-            # print('support')
-            if msg.chat.type == 'private':
-                await  bot.send_message(msg.chat.id, text=support_info, parse_mode='HTML',reply_markup=menu_keyboard_2stage(
-                    msg.chat.id))
+        # @bot.message_handler(commands=['support'])
+        # async def  support_handler(msg:Message):
+        #     # print('support')
+        #     if msg.chat.type == 'private':
+        #         await  bot.send_message(msg.chat.id, text=support_info, parse_mode='HTML',reply_markup=menu_keyboard_2stage(
+        #             msg.chat.id))
 
             # Утилита для получения  айди самого себя
-        @bot.message_handler(commands=['ids'])
-        async def idsend(msg:Message):
-                if msg.chat.type=='private':
-                    username = msg.from_user.username
-                    link = f"[{username}](https://t.me/{username})"
-                    await  bot.send_message(msg.chat.id, link, parse_mode='Markdown', disable_web_page_preview=True,
-                                      reply_markup=menu_keyboard_2stage(msg.chat.id))
+        # @bot.message_handler(commands=['ids'])
+        # async def idsend(msg:Message):
+        #         if msg.chat.type=='private':
+        #             username = msg.from_user.username
+        #             link = f"[{username}](https://t.me/{username})"
+        #             await  bot.send_message(msg.chat.id, link, parse_mode='Markdown', disable_web_page_preview=True,
+        #                               reply_markup=menu_keyboard_2stage(msg.chat.id))
 
         #блок ключевых слов
-        @bot.message_handler(commands=['mykeywords'])
-        async def kwrdupdt(msg:Message):
-                if msg.chat.type=='private':
-                    keywords= get_user_and_keywords(msg.from_user.id)
-
-                    # print(keywords)
-
-                    if len(keywords)==0:
-                       await  bot.send_message(msg.chat.id,'💥🔦 <b>Мои ключевые слова</b>\n\nВ данный момент у тебя нет ключевых '
-                                                       'слов и фраз.',parse_mode='html',reply_markup=adddelete_keywords('addonly'))
-
-                    elif len(keywords)>0:
-                        keywords_showing=[]
-                        for key in keywords:
-                              keywords_showing.append(' '.join(key))
-                        keywords_showing='\n'.join(keywords_showing)
-                        await   bot.send_message(msg.chat.id,f'💥🔦 <b>Мои ключевые слова</b>\n\n{keywords_showing}',
-                                          parse_mode='html',reply_markup=adddelete_keywords())
+        # @bot.message_handler(commands=['mykeywords'])
+        # async def kwrdupdt(msg:Message):
+        #         if msg.chat.type=='private':
+        #             keywords= get_user_and_keywords(msg.from_user.id)
+        #
+        #             # print(keywords)
+        #
+        #             if len(keywords)==0:
+        #                await  bot.send_message(msg.chat.id,'💥🔦 <b>Мои ключевые слова</b>\n\nВ данный момент у тебя нет ключевых '
+        #                                                'слов и фраз.',parse_mode='html',reply_markup=adddelete_keywords('addonly'))
+        #
+        #             elif len(keywords)>0:
+        #                 keywords_showing=[]
+        #                 for key in keywords:
+        #                       keywords_showing.append(' '.join(key))
+        #                 keywords_showing='\n'.join(keywords_showing)
+        #                 await   bot.send_message(msg.chat.id,f'💥🔦 <b>Мои ключевые слова</b>\n\n{keywords_showing}',
+        #                                   parse_mode='html',reply_markup=adddelete_keywords())
 
                 #to do: убирать ключевые слова по клвавиатуре и добавлять по next step handler
 
@@ -318,49 +336,49 @@ async def clientside(bot):
                             await bot.send_message(msg.chat.id, '❌Ключевое слово не может быть добавлено, так как превышает лимит 1 из 1.\n\n'+premium_offer,reply_markup=menu_keyboard_2stage(msg.chat.id))
                 await bot.delete_state(msg.from_user.id, msg.chat.id)
 
-        @bot.message_handler(commands=['keywordslist_clear'])
-        async def kwrd_list_del(callback):
-            # print('pltcm')
-            if callback.message.chat.type == 'group':
-                pass
-            else:
-                 if add_delete_keyword(callback.message.chat.id,keyword=None,action='clear_list') == 'keywords_clear':
-                     await bot.edit_message_text('Ваш список ключевых слов очищен',callback.message.chat.id,callback.message.id,reply_markup=adddelete_keywords('addonly'))
-                 else:
-                      await bot.edit_message_text('Чтото не так со списком', callback.message.chat.id, callback.message.id)
+        # @bot.message_handler(commands=['keywordslist_clear'])
+        # async def kwrd_list_del(callback):
+        #     # print('pltcm')
+        #     if callback.message.chat.type == 'group':
+        #         pass
+        #     else:
+        #          if add_delete_keyword(callback.message.chat.id,keyword=None,action='clear_list') == 'keywords_clear':
+        #              await bot.edit_message_text('Ваш список ключевых слов очищен',callback.message.chat.id,callback.message.id,reply_markup=adddelete_keywords('addonly'))
+        #          else:
+        #               await bot.edit_message_text('Чтото не так со списком', callback.message.chat.id, callback.message.id)
 
             #банлист
 
         # логика блока бана
-        @bot.message_handler(commands=['banlist_show'])
-        async def block_list_show(msg:Message):
-                if msg.chat.type=='group':
-                    pass
-                else:
-                    # print(msg.message_id)
-                    blocklist=add_delete_get_clear_blocked_users(user_id=msg.from_user.id,action='getall')
-                    # print(len(blocklist))
-                    if len(blocklist)==0:
-                             await bot.send_message(msg.chat.id,'⛔ Заблокированные люди\n\nУпс,список пока пуст',reply_markup=menu_keyboard_2stage(msg.chat.id))
+        # @bot.message_handler(commands=['banlist_show'])
+        # async def block_list_show(msg:Message):
+        #         if msg.chat.type=='group':
+        #             pass
+        #         else:
+        #             # print(msg.message_id)
+        #             blocklist=add_delete_get_clear_blocked_users(user_id=msg.from_user.id,action='getall')
+        #             # print(len(blocklist))
+        #             if len(blocklist)==0:
+        #                      await bot.send_message(msg.chat.id,'⛔ Заблокированные люди\n\nУпс,список пока пуст',reply_markup=menu_keyboard_2stage(msg.chat.id))
+        #
+        #             else:
+        #                  await bot.send_message(msg.chat.id,banlist_preview
+        #                                              ,reply_markup=banlistmarkup(msg.from_user.id,blocklist))
 
-                    else:
-                         await bot.send_message(msg.chat.id,banlist_preview
-                                                     ,reply_markup=banlistmarkup(msg.from_user.id,blocklist))
-
-        @bot.message_handler(commands=['banlist_clear'])
-        async def block_list_clear(msg:Message):
-                if msg.chat.type=='group':
-                    pass
-                else:
-                    # print(msg.message_id)
-                    blocklist=add_delete_get_clear_blocked_users(user_id=msg.from_user.id,action='getall')
-                    # print(len(blocklist))
-                    if len(blocklist)!=0:
-                       if add_delete_get_clear_blocked_users(user_id=msg.from_user.id, action='clear')==3:
-                             await bot.send_message(msg.chat.id,'⛔ Блок-лист успешно очищен🧹')
-
-                    else:
-                         await bot.send_message(msg.chat.id,'⛔Блок-лист пока пуст ')
+        # @bot.message_handler(commands=['banlist_clear'])
+        # async def block_list_clear(msg:Message):
+        #         if msg.chat.type=='group':
+        #             pass
+        #         else:
+        #             # print(msg.message_id)
+        #             blocklist=add_delete_get_clear_blocked_users(user_id=msg.from_user.id,action='getall')
+        #             # print(len(blocklist))
+        #             if len(blocklist)!=0:
+        #                if add_delete_get_clear_blocked_users(user_id=msg.from_user.id, action='clear')==3:
+        #                      await bot.send_message(msg.chat.id,'⛔ Блок-лист успешно очищен🧹')
+        #
+        #             else:
+        #                  await bot.send_message(msg.chat.id,'⛔Блок-лист пока пуст ')
 
 
 
@@ -438,7 +456,8 @@ async def clientside(bot):
         #     чекать все смс из чатов
         @bot.message_handler(func=lambda msg:Message )
         async def messagecheck(msg):
-                print(msg.from_user.username)
+            print(msg.from_user.username)
+            if stop_function() is True:
                 if msg.chat.type =='private':
                     if msg.from_user.username is None:
                         await bot.send_message(msg.chat.id, 'Извините,но для продолжения дальнейшей полноценной '
@@ -812,6 +831,7 @@ async def clientside(bot):
         #     Callback-логика
         @bot.callback_query_handler(func=lambda callback:callback.data)
         async def callback_logic(callback):
+            if stop_function() is True:
                     # print(callback.data)
                     # логика бана
                     if callback.data == 'banlist_show':
@@ -1377,6 +1397,7 @@ async def serverside(app):
     # проверки на ник в таблице и рассылку почистить от сообщений
     @app.on_message()
     async def forward_to_private_chat(app, message):
+        if stop_function() is True:
         # print(last_message_len1)
         # if message.from_user.id in [704718950 ,6724529493]:
         #     print(message)
