@@ -99,15 +99,15 @@ async def clientside(bot):
                 await bot.delete_state(msg.from_user.id, msg.chat.id)
 
         # @bot.message_handler(commands=['admininfo'])
-        # async def userslist(msg: Message):
-        #     admins=all_permissions()
-        #     if msg.from_user.id in admins:
-        #         all_users,all_users_play,users_premium_list=all_users_list()
-        #         # sum,price,last_month,quant_sold,last_year = profit_calc()
-        #
-        #         await bot.send_message(msg.chat.id,parametrs_info.format(all_users,all_users_play,users_premium_list
-        #                                                                  ),
-        #                                parse_mode='HTML')
+        async def userslist(msg: Message):
+            admins=all_permissions('get_admins')
+            if msg.from_user.id in admins:
+                all_users,all_users_play,users_premium_list=all_users_list()
+                # sum,price,last_month,quant_sold,last_year = profit_calc()
+
+                await bot.send_message(msg.chat.id,parametrs_info.format(all_users,all_users_play,users_premium_list
+                                                                         ),
+                                       parse_mode='HTML')
 
         @bot.message_handler(commands=['global_stop'])
         async def global_stop(msg: Message):
@@ -254,23 +254,23 @@ async def clientside(bot):
 
         #блок ключевых слов
         # @bot.message_handler(commands=['mykeywords'])
-        # async def kwrdupdt(msg:Message):
-        #         if msg.chat.type=='private':
-        #             keywords= get_user_and_keywords(msg.from_user.id)
-        #
-        #             # print(keywords)
-        #
-        #             if len(keywords)==0:
-        #                await  bot.send_message(msg.chat.id,'💥🔦 <b>Мои ключевые слова</b>\n\nВ данный момент у тебя нет ключевых '
-        #                                                'слов и фраз.',parse_mode='html',reply_markup=adddelete_keywords('addonly'))
-        #
-        #             elif len(keywords)>0:
-        #                 keywords_showing=[]
-        #                 for key in keywords:
-        #                       keywords_showing.append(' '.join(key))
-        #                 keywords_showing='\n'.join(keywords_showing)
-        #                 await   bot.send_message(msg.chat.id,f'💥🔦 <b>Мои ключевые слова</b>\n\n{keywords_showing}',
-        #                                   parse_mode='html',reply_markup=adddelete_keywords())
+        async def kwrdupdt(msg:Message):
+                if msg.chat.type=='private':
+                    keywords= get_user_and_keywords(msg.from_user.id)
+
+                    # print(keywords)
+
+                    if len(keywords)==0:
+                       await  bot.send_message(msg.chat.id,'💥🔦 <b>Мои ключевые слова</b>\n\nВ данный момент у тебя нет ключевых '
+                                                       'слов и фраз.',parse_mode='html',reply_markup=adddelete_keywords('addonly'))
+
+                    elif len(keywords)>0:
+                        keywords_showing=[]
+                        for key in keywords:
+                              keywords_showing.append(' '.join(key))
+                        keywords_showing='\n'.join(keywords_showing)
+                        await   bot.send_message(msg.chat.id,f'💥🔦 <b>Мои ключевые слова</b>\n\n{keywords_showing}',
+                                          parse_mode='html',reply_markup=adddelete_keywords())
 
                 #to do: убирать ключевые слова по клвавиатуре и добавлять по next step handler
 
@@ -337,48 +337,48 @@ async def clientside(bot):
                 await bot.delete_state(msg.from_user.id, msg.chat.id)
 
         # @bot.message_handler(commands=['keywordslist_clear'])
-        # async def kwrd_list_del(callback):
-        #     # print('pltcm')
-        #     if callback.message.chat.type == 'group':
-        #         pass
-        #     else:
-        #          if add_delete_keyword(callback.message.chat.id,keyword=None,action='clear_list') == 'keywords_clear':
-        #              await bot.edit_message_text('Ваш список ключевых слов очищен',callback.message.chat.id,callback.message.id,reply_markup=adddelete_keywords('addonly'))
-        #          else:
-        #               await bot.edit_message_text('Чтото не так со списком', callback.message.chat.id, callback.message.id)
+        async def kwrd_list_del(callback):
+            # print('pltcm')
+            if callback.message.chat.type == 'group':
+                pass
+            else:
+                 if add_delete_keyword(callback.message.chat.id,keyword=None,action='clear_list') == 'keywords_clear':
+                     await bot.edit_message_text('Ваш список ключевых слов очищен',callback.message.chat.id,callback.message.id,reply_markup=adddelete_keywords('addonly'))
+                 else:
+                      await bot.edit_message_text('Чтото не так со списком', callback.message.chat.id, callback.message.id)
 
-            #банлист
+            банлист
 
         # логика блока бана
         # @bot.message_handler(commands=['banlist_show'])
-        # async def block_list_show(msg:Message):
-        #         if msg.chat.type=='group':
-        #             pass
-        #         else:
-        #             # print(msg.message_id)
-        #             blocklist=add_delete_get_clear_blocked_users(user_id=msg.from_user.id,action='getall')
-        #             # print(len(blocklist))
-        #             if len(blocklist)==0:
-        #                      await bot.send_message(msg.chat.id,'⛔ Заблокированные люди\n\nУпс,список пока пуст',reply_markup=menu_keyboard_2stage(msg.chat.id))
-        #
-        #             else:
-        #                  await bot.send_message(msg.chat.id,banlist_preview
-        #                                              ,reply_markup=banlistmarkup(msg.from_user.id,blocklist))
+        async def block_list_show(msg:Message):
+                if msg.chat.type=='group':
+                    pass
+                else:
+                    # print(msg.message_id)
+                    blocklist=add_delete_get_clear_blocked_users(user_id=msg.from_user.id,action='getall')
+                    # print(len(blocklist))
+                    if len(blocklist)==0:
+                             await bot.send_message(msg.chat.id,'⛔ Заблокированные люди\n\nУпс,список пока пуст',reply_markup=menu_keyboard_2stage(msg.chat.id))
+
+                    else:
+                         await bot.send_message(msg.chat.id,banlist_preview
+                                                     ,reply_markup=banlistmarkup(msg.from_user.id,blocklist))
 
         # @bot.message_handler(commands=['banlist_clear'])
-        # async def block_list_clear(msg:Message):
-        #         if msg.chat.type=='group':
-        #             pass
-        #         else:
-        #             # print(msg.message_id)
-        #             blocklist=add_delete_get_clear_blocked_users(user_id=msg.from_user.id,action='getall')
-        #             # print(len(blocklist))
-        #             if len(blocklist)!=0:
-        #                if add_delete_get_clear_blocked_users(user_id=msg.from_user.id, action='clear')==3:
-        #                      await bot.send_message(msg.chat.id,'⛔ Блок-лист успешно очищен🧹')
-        #
-        #             else:
-        #                  await bot.send_message(msg.chat.id,'⛔Блок-лист пока пуст ')
+        async def block_list_clear(msg:Message):
+                if msg.chat.type=='group':
+                    pass
+                else:
+                    # print(msg.message_id)
+                    blocklist=add_delete_get_clear_blocked_users(user_id=msg.from_user.id,action='getall')
+                    # print(len(blocklist))
+                    if len(blocklist)!=0:
+                       if add_delete_get_clear_blocked_users(user_id=msg.from_user.id, action='clear')==3:
+                             await bot.send_message(msg.chat.id,'⛔ Блок-лист успешно очищен🧹')
+
+                    else:
+                         await bot.send_message(msg.chat.id,'⛔Блок-лист пока пуст ')
 
 
 
@@ -398,7 +398,7 @@ async def clientside(bot):
             bill=int(msg.successful_payment.total_amount)/100
 
             # print(date,user_id,amount/100)
-            daily_profit(user_id,bill,msg.from_user.username)
+
             # message=json.dumps(message,ensure_ascii=False)
             if str(msg.from_user.id).lower() in str(msg.successful_payment.invoice_payload):
                 if controling_premium(msg.from_user.id, new_premium_status=True) == 2:
