@@ -9,17 +9,15 @@ from sqlfile import *
 import asyncio
 from pyrogram import Client,methods as MTHPYRO
 
-
+import openpyxl
 global app
 global bot
 import pandas as pd
-
 import time
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
 
-last_message_len=0
 
 async def clientside(bot):
         class SuperStates(STSGR):
@@ -28,6 +26,9 @@ async def clientside(bot):
             getnamemail=ste()
             getcontentmail=ste()
             getpricelist=ste()
+
+            add_new_admin=ste()
+            add_new_seller=ste()
 
 
         # прайслист
@@ -71,20 +72,46 @@ async def clientside(bot):
                     os.remove(file_name)
 
         # admin_control
+
+        @bot.message_handler(state=SuperStates.add_new_admin)
+        async def add_admin(msg:Message):
+            new_admin_user=msg.text
+            if all_permissions(action='add',new_admin_id=new_admin_user)== 'admin added':
+                await bot.send_message(msg.chat.id,f'Админ {new_admin_user} добавлен')
+            elif all_permissions(action='add',new_admin_id=new_admin_user) == 'added yet':
+                await bot.send_message(msg.chat.id, f'Админ {new_admin_user} уже в списке админов')
+            await bot.delete_state(msg.from_user.id, msg.chat.id)
+
+        @bot.message_handler(state=SuperStates.add_new_seller)
+        async def add_autoseller(msg: Message):
+            new_seller_user = msg.text
+            if "@" not in new_seller_user:
+                await bot.send_message(msg.chat.id, f'Не получется обработать. \n'
+                                                    f'Введите еще раз,например: '
+                                                    f'@shop_username')
+
+
+            if all_permissions(action='add', new_autoseller_id=new_seller_user) == 'added seller':
+                await bot.send_message(msg.chat.id, f'Продавец {new_seller_user} добавлен')
+                await bot.delete_state(msg.from_user.id, msg.chat.id)
+            elif all_permissions(action='add', new_autoseller_id=new_seller_user) == 'added yet':
+                await bot.send_message(msg.chat.id, f'Админ {new_seller_user} уже в списке продавцов')
+                await bot.delete_state(msg.from_user.id, msg.chat.id)
+
         @bot.message_handler(commands=['admininfo'])
         async def userslist(msg: Message):
-            admins=all_admins()
+            admins=all_permissions()
             if msg.from_user.id in admins:
                 all_users,all_users_play,users_premium_list=all_users_list()
-                sum,price,last_month,quant_sold,last_year = profit_calc()
+                # sum,price,last_month,quant_sold,last_year = profit_calc()
 
-                await bot.send_message(msg.chat.id,parametrs_info.format(all_users,all_users_play,users_premium_list,
-                                                                         price,quant_sold,sum,last_month,last_year),
+                await bot.send_message(msg.chat.id,parametrs_info.format(all_users,all_users_play,users_premium_list
+                                                                         ),
                                        parse_mode='HTML')
 
         @bot.message_handler(commands=['setprice'])
         async def pricesetinit(msg: Message):
-            admins = all_admins()
+            admins = all_permissions()
             if msg.from_user.id in admins:
                 await bot.send_message(msg.chat.id,f'Укажите новую цену Premium')
                 await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.getnewprice, user_id=
@@ -186,12 +213,7 @@ async def clientside(bot):
                        await  bot.send_message(msg.chat.id,'Друг, и снова здраствуй!',reply_markup=menu_keyboard_1stage())
 
         # @bot.message_handler(text=['Продавать товар'])
-        async def sell(msg:Message):
-                  await bot.send_message(msg.chat.id,text=f'Вы в разделе продажа товаров.\n\n'
-                                                          f'Сюда будут приходить все сообщения о товарах согласно вашим '
-                                                          f'ключевым словам.\n\n'
-                                                          f'Для ознкаомления работы бота нажмите Руководство',
-                                    reply_markup=menu_keyboard_2stage(msg.chat.id))
+
 
 
 
@@ -416,128 +438,227 @@ async def clientside(bot):
         #     чекать все смс из чатов
         @bot.message_handler(func=lambda msg:Message )
         async def messagecheck(msg):
-                # print(msg.text,msg.chat.id,msg.chat.type)
+                print(msg.from_user.username)
                 if msg.chat.type =='private':
-                    if add_users_field(msg.from_user.id,msg.from_user.username,msg.chat.id)!='new added':
-                        if out_premium_check(msg.chat.id) in ['skip_prem','skip_notprem']:
-                            # print( out_premium_check(msg.chat.id))
-                            if 'Главное меню' in msg.text:
-                                # print(22)
-                                await bot.send_message(msg.chat.id, text=f'Главное меню:', reply_markup=menu_keyboard_1stage())
-                            elif 'Продавать товар' in msg.text:
-                                await sell(msg)
-                                # await bot.send_message(msg.chat.id, text=f'Продавать товар:', reply_markup=menu_keyboard_2stage(msg.chat.id))
-                                # await bot.send_message(msg.chat.id,'продажа')
-
-                            elif 'Блок-лист' in  msg.text:
-                                # bot.send_message(msg.chat.id,'Раздел Блок-лист в разработке')
-                                 await block_list_show(msg)
-                            elif 'Выбрать товары'in msg.text:
-                                # print("yes")
-                                # bot.send_message(msg.chat.id,'Раздел Выбрать товары в разработке')
-                                await bot.send_message(msg.chat.id, 'Какие сообщения по товарам получать?',
-                                                 reply_markup=choosing_keyboard_proccess(msg.chat.id,level='memory'))
-                            elif  'Premium-тариф' in msg.text:
-                                if prem_status(msg.chat.id)==True:
-                                    await bot.send_message(msg.chat.id,f'Ваш Premium-тариф активен\n\n '
-                                                                 f'Осталось {out_premium_check(msg.chat.id,action=True)} дней ',
-                                                     reply_markup=menu_keyboard_2stage(
-                                                                 msg.chat.id))
-                                else:
-                                    await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
-                                    await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'Оплатить '
-
-                                                                                         f'Premium на 30 дней ',
-                                                                                                       f'successful_payment_{msg.from_user.id}',
-                                                     token_yukassa_payment_GorbushkinService, 'RUB', [LabeledPrice(
-                                            'Купить', setprice('get') * 100)])
-                            elif 'Руководство' in msg.text:
-                                await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
-
-                            elif  'Ключевые слова' in msg.text:
-                                  # print('кл сл')
-                                  await kwrdupdt(msg)
-                            elif  'Продажи на паузу' in msg.text:
-                                getchangeplaystatus(msg.chat.id,action=0)
-                                await bot.send_message(msg.chat.id, 'Продажи приостановлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
-
-                                # bot.send_message(msg.chat.id, 'Раздел продажи на паузу в разработке')
-                            elif 'Возобновить продажи' in msg.text:
-                                 getchangeplaystatus(msg.chat.id, action=1)
-                                 await bot.send_message(msg.chat.id, 'Продажи возобновлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
-                            elif 'Статистика запросов' in msg.text :
-                                def get_current_date_numeric():
-                                    current_date = datetime.now()
-                                    return current_date.strftime("%d.%m")
-                                await bot.send_message(msg.chat.id, f'Cтатистика на {get_current_date_numeric()}')
-
-                                def format_products_for_message(products):
-                                    message = "Список продуктов:\n"
-                                    for product, count in products:
-                                        # Удаляем 'iphone' из строки продукта
-                                        product_without_iphone = product.replace('iphone ', '')
-                                        message += f"   {product_without_iphone} - {count}\n"
-
-                                    return message
-                                def split_message_for_telegram(text, max_length=4096):
-                                    # Разделение текста на части по максимальной длине
-                                    parts = []
-                                    while len(text) > 0:
-                                        # Если текст короче максимальной длины, добавляем его целиком
-                                        if len(text) <= max_length:
-                                            parts.append(text)
-                                            break
-                                        else:
-                                            # Находим последний подходящий перенос строки
-                                            split_index = text.rfind('\n', 0, max_length)
-                                            if split_index == -1:
-                                                # Если перенос строки не найден, разбиваем по максимальной длине
-                                                split_index = max_length
-
-                                            # Добавляем часть текста в список
-                                            parts.append(text[:split_index])
-                                            # Удаляем добавленную часть из исходного текста
-                                            text = text[split_index:]
-
-                                    return parts
-                                products=addinf_pos(action='get')
-                                # Форматирование сообщения
-                                formatted_message = format_products_for_message(products)
-
-                                # Разделение сообщения на части
-                                message_parts = split_message_for_telegram(formatted_message)
-                                for item in message_parts:
-                                    await bot.send_message(msg.chat.id, item)
-
-
-
-
-                            elif 'Изменить цену Premium' in msg.text:
-                                await  pricesetinit(msg)
-                            elif 'Сводка' in msg.text:
-                                await  userslist(msg)
-                            elif 'Рассылка' in msg.text:
-                                if msg.from_user.id in all_admins():
-                                    await  bot.send_message(msg.chat.id,'Раздел Рассылок',reply_markup=mailmenu())
-                            elif 'Автопродажи' in msg.text:
-                                await  bot.send_message(msg.chat.id, autocall_text,
-                                                        parse_mode='html',
-                                                        reply_markup=pricelistmenu(msg.chat.id))
-                            else:
-                                 await bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
-
-
-                        else:
-                            await bot.send_message(msg.chat.id,'Упс, ваш Premium-период истек.\n\n'
-                                                         'Количество ваших ключевых слов и выбранных товаров сократилось до 1.'
-                                                         '\n\n'
-                                                         'Желаете Продлить ? - кликните на '
-                                                         '<b>Premium-тариф</b>',
-                                             parse_mode='HTML')
-                            await messagecheck(msg=msg)
+                    if msg.from_user.username is None:
+                        await bot.send_message(msg.chat.id, 'Извините,но для продолжения дальнейшей полноценной '
+                                                            'работы бота укажите '
+                                                            'ваше Имя Пользователя(username) в Телеграмм',
+                                               parse_mode='HTML')
 
                     else:
-                        await welcome(msg)
+                        if add_users_field(msg.from_user.id,msg.from_user.username,msg.from_user.id)!='new added':
+                            if out_premium_check(msg.chat.id) in ['skip_prem','skip_notprem']:
+                                # print( out_premium_check(msg.chat.id))
+                                if msg.from_user.username in all_permissions('get_admins'):
+                                    print('get_admins')
+                                    if all_permissions('update',username_remove=msg.from_user.username,
+                                                       new_admin_id=msg.from_user.id)=='admin id changed':
+                                        await bot.send_message(msg.chat.id, text='Вам выдана роль Админа🛠',
+                                                           reply_markup=menu_keyboard_2stage(msg.from_user.id))
+
+                                if msg.from_user.username in all_permissions('get_autosellers'):
+                                    print('get_autosellers')
+                                    if all_permissions('update',username_remove=msg.from_user.username,
+                                                       new_autoseller_id=msg.from_user.id)=='autoseller id changed':
+                                        await bot.send_message(msg.chat.id, text='Вам выдан доступ к Автопродажам🤖',
+                                        reply_markup = menu_keyboard_2stage(msg.from_user.id)  )
+                                refresh_username(msg.from_user.id,msg.from_user.username)
+                                if 'Главное меню' in msg.text:
+                                    # print(22)
+                                    await bot.send_message(msg.chat.id, text=f'Главное меню:', reply_markup=menu_keyboard_1stage())
+
+
+                                elif 'Админ-панель' in msg.text:
+                                    if msg.from_user.id in all_permissions('get_admins'):
+                                        await bot.send_message(msg.chat.id, text='Админ-панель',
+                                                           reply_markup=admin_panel())
+
+                                elif 'Назад' in msg.text:
+                                    await bot.send_message(msg.chat.id, text='Главное меню',
+                                                           reply_markup=menu_keyboard_2stage(msg.from_user.id))
+
+
+                                elif 'Добавить админа' in msg.text:
+                                    print( all_permissions('get_admins'))
+                                    if msg.from_user.id in all_permissions('get_admins'):
+                                        await bot.send_message(msg.chat.id, text='Введите [@username](https://usernamе) '
+                                                                                 'пользователя '
+                                                                                 'Telegram',parse_mode='Markdown')
+                                        await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.add_new_admin,
+                                                            user_id=msg.chat.id)
+
+
+                                elif 'Добавить продавца' in msg.text:
+                                    if msg.from_user.id in all_permissions('get_admins'):
+                                        await bot.send_message(msg.chat.id, text='Введите [@username](https://usernamе) '
+                                                                                 'пользователя '
+                                                                                 'Telegram', parse_mode='Markdown')
+                                        await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.add_new_seller,
+                                                            user_id=msg.chat.id)
+
+
+                                elif 'Перейти на Бесплатный Premium'  in msg.text:
+                                    print(123)
+                                    if msg.from_user.id in all_permissions('get_admins'):
+                                        if premium_admin_switch('change')[1] is False:
+
+                                            await bot.send_message(msg.chat.id, text='Оплата за Premium-тариф '
+                                                                                     'отключена!\n'
+                                                                                     'Действует '
+                                                                                     'бесплатная раздача ',reply_markup=admin_panel())
+                                elif 'Включить Платный Premium' in msg.text:
+                                    print(456)
+                                    if msg.from_user.id in all_permissions('get_admins'):
+                                        if premium_admin_switch('change')[1] is True:
+                                            await bot.send_message(msg.chat.id, text='Оплата за Premium-тариф '
+                                                                                     'включена ',reply_markup=admin_panel())
+
+
+
+
+
+
+                                elif 'Продавать товар' in msg.text:
+                                        await bot.send_message(msg.chat.id, text=f'Вы в разделе продажа товаров.\n\n'
+                                                                                 f'Сюда будут приходить все сообщения о товарах согласно вашим '
+                                                                                 f'ключевым словам.\n\n'
+                                                                                 f'Для ознакомления работы бота нажмите Руководство',
+                                                               reply_markup=menu_keyboard_2stage(msg.chat.id))
+
+                                    # await bot.send_message(msg.chat.id, text=f'Продавать товар:', reply_markup=menu_keyboard_2stage(msg.chat.id))
+                                    # await bot.send_message(msg.chat.id,'продажа')
+
+                                elif 'Блок-лист' in  msg.text:
+                                    # bot.send_message(msg.chat.id,'Раздел Блок-лист в разработке')
+                                     await block_list_show(msg)
+
+
+
+                                elif 'Выбрать товары'in msg.text:
+                                    # print("yes")
+                                    # bot.send_message(msg.chat.id,'Раздел Выбрать товары в разработке')
+                                    await bot.send_message(msg.chat.id, 'Какие сообщения по товарам получать?',
+                                                     reply_markup=choosing_keyboard_proccess(msg.chat.id,level='memory',
+                                                                                             product_choosen='iphone'))
+
+
+
+
+
+
+
+
+
+                                elif  'Premium-тариф' in msg.text:
+                                    if prem_status(msg.chat.id)==True:
+                                        await bot.send_message(msg.chat.id,f'Ваш Premium-тариф активен\n\n '
+                                                                     f'Осталось {out_premium_check(msg.chat.id,action=True)} дней ',
+                                                         reply_markup=menu_keyboard_2stage(
+                                                                     msg.chat.id))
+                                    else:
+                                        if premium_admin_switch() is True:
+                                            amount = (int(setprice('get')) * 100)
+                                            await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'Оплатить '
+
+                                                                                                 f'Premium на 30 дней ',
+                                                                   f'successful_payment_{msg.from_user.id}',
+                                                                   token_yukassa_online_payment_GorbushkinService,
+                                                                   'RUB', [LabeledPrice(
+                                                    'Купить', amount)])
+                                        else:
+                                            await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
+                                            print(setprice('get'),type(setprice('get')))
+
+                                elif 'Руководство' in msg.text:
+                                    await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
+
+                                elif  'Ключевые слова' in msg.text:
+                                      # print('кл сл')
+                                      await kwrdupdt(msg)
+                                elif  'Продажи на паузу' in msg.text:
+                                    getchangeplaystatus(msg.chat.id,action=0)
+                                    await bot.send_message(msg.chat.id, 'Продажи приостановлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
+
+                                    # bot.send_message(msg.chat.id, 'Раздел продажи на паузу в разработке')
+                                elif 'Возобновить продажи' in msg.text:
+                                     getchangeplaystatus(msg.chat.id, action=1)
+                                     await bot.send_message(msg.chat.id, 'Продажи возобновлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
+                                elif 'Статистика запросов' in msg.text :
+                                    def get_current_date_numeric():
+                                        current_date = datetime.now()
+                                        return current_date.strftime("%d.%m")
+                                    await bot.send_message(msg.chat.id, f'Cтатистика на {get_current_date_numeric()}')
+
+                                    def format_products_for_message(products):
+                                        message = "Список продуктов:\n"
+                                        for product, count in products:
+                                            # Удаляем 'iphone' из строки продукта
+                                            product_without_iphone = product.replace('iphone ', '')
+                                            message += f"   {product_without_iphone} - {count}\n"
+
+                                        return message
+                                    def split_message_for_telegram(text, max_length=4096):
+                                        # Разделение текста на части по максимальной длине
+                                        parts = []
+                                        while len(text) > 0:
+                                            # Если текст короче максимальной длины, добавляем его целиком
+                                            if len(text) <= max_length:
+                                                parts.append(text)
+                                                break
+                                            else:
+                                                # Находим последний подходящий перенос строки
+                                                split_index = text.rfind('\n', 0, max_length)
+                                                if split_index == -1:
+                                                    # Если перенос строки не найден, разбиваем по максимальной длине
+                                                    split_index = max_length
+
+                                                # Добавляем часть текста в список
+                                                parts.append(text[:split_index])
+                                                # Удаляем добавленную часть из исходного текста
+                                                text = text[split_index:]
+
+                                        return parts
+                                    products=addinf_pos(action='get')
+                                    # Форматирование сообщения
+                                    formatted_message = format_products_for_message(products)
+
+                                    # Разделение сообщения на части
+                                    message_parts = split_message_for_telegram(formatted_message)
+                                    for item in message_parts:
+                                        await bot.send_message(msg.chat.id, item)
+
+
+
+
+                                elif 'Изменить цену Premium' in msg.text:
+                                    await  pricesetinit(msg)
+                                elif 'Сводка' in msg.text:
+                                    await  userslist(msg)
+                                elif 'Рассылка' in msg.text:
+                                    if msg.from_user.id in all_permissions('get_admins'):
+                                        await  bot.send_message(msg.chat.id,'Раздел Рассылок',reply_markup=mailmenu())
+                                elif 'Автопродажи' in msg.text:
+                                    if msg.from_user.id in  all_permissions('get_autosellers'):
+                                        await  bot.send_message(msg.chat.id, autocall_text,
+                                                            parse_mode='html',
+                                                            reply_markup=pricelistmenu(msg.chat.id))
+                                else:
+                                     await bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
+
+
+                            else:
+                                await bot.send_message(msg.chat.id,'Упс, ваш Premium-период истек.\n\n'
+                                                             'Количество ваших ключевых слов и выбранных товаров сократилось до 1.'
+                                                             '\n\n'
+                                                             'Желаете Продлить ? - кликните на '
+                                                             '<b>Premium-тариф</b>',
+                                                 parse_mode='HTML')
+                                await messagecheck(msg=msg)
+
+                        else:
+                            await welcome(msg)
+
                 if 'group' in msg.chat.type:
                     # print(msg)
                     #По тех причинам мы не в состоянии связаться с человеком если отсутствует никнейн добавляте себе его и мы
@@ -570,35 +691,38 @@ async def clientside(bot):
                             message_correct.remove(item)
                     message_correct=' '.join(message_correct)
 
-                    with open('IPHONE_LIST.json', 'r') as f:
-                        productlist = json.load(f)
-                    priorities_model = []
-                    priorities_color = []
-                    priorities_memories = []
-                    for product in tuple(productlist.keys()):
-                        years = productlist[product]
-                        for year in tuple(years.keys()):
-                            models = years[year]
-                            for model in models:
-                                if model not in priorities_model:
-                                    priorities_model.append(model)
-                                specs = models[model]
-                                for spec in specs:
-                                    colors = specs[spec]
-                                    for color in colors:
-                                        if color not in priorities_color:
-                                            priorities_color.append(color)
-                                        memories = colors[color]
-                                        for memory in memories:
-                                            if memory not in priorities_memories:
-                                                priorities_memories.append(memory)
+                    # with open('IPHONE_LIST.json', 'r') as f:
+                    #     productlist = json.load(f)
+                    # priorities_model = []
+                    # priorities_color = []
+                    # priorities_memories = []
+                    #
+                    # years = productlist['iphone']
+                    # for year in tuple(years.keys()):
+                    #         models = years[year]
+                    #         for model in models:
+                    #             if model not in priorities_model:
+                    #                 priorities_model.append(model)
+                    #             specs = models[model]
+                    #             for spec in specs:
+                    #                 colors = specs[spec]
+                    #                 for color in colors:
+                    #                     if color not in priorities_color:
+                    #                         priorities_color.append(color)
+                    #                     memories = colors[color]
+                    #                     for memory in memories:
+                    #                         if memory not in priorities_memories:
+                    #                             priorities_memories.append(memory)
 
                     # print(priorities_color)
                     # print(priorities_memories)
 
-                    priorities = priorities_memories + priorities_color + priorities_model
-
-                    addinf_pos(text=message_correct,priorities=priorities)
+                    # priorities = priorities_memories + priorities_color + priorities_model
+                    if 'airpods' in message_correct:
+                        prio=priorities['airpods_prio']
+                    elif 'iphone' in message_correct:
+                        prio=priorities['iphone_prio']
+                    addinf_pos(text=message_correct,priorities=prio)
 
 
 
@@ -650,7 +774,7 @@ async def clientside(bot):
                                 if str(key).lower() in  message_correct.lower():
 
                                     need_send.append(1)
-                                    if str(key).lower() in priorities:
+                                    if str(key).lower() in prio:
                                         guarantee+=1
                                 else:
                                     # if str(key).lower() not in priorities:
@@ -680,19 +804,6 @@ async def clientside(bot):
                             # else:
                             #     need_send = 0
                             #     not_need = 0
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -811,84 +922,179 @@ async def clientside(bot):
                          #временная раздача халявы
                     # премиум логика
                     elif callback.data == "free_premium":
-                        await bot.delete_message(callback.message.chat.id, callback.message.id )
-                        if controling_premium(callback.message.chat.id, True) in [2, 1]:
-                           await bot.send_message(callback.message.chat.id, premium_bonus, parse_mode='HTML')
+                        if premium_admin_switch() is False:
+                            if controling_premium(callback.message.chat.id, True) in [2, 1]:
+                                await bot.send_message(callback.message.chat.id, premium_bonus, parse_mode='HTML')
+                        else:
+                            await bot.send_message(callback.message.chat.id,'Извините, Промоакция уже не актульна',
+                                                   parse_mode='HTML')
+
+
+
+                    #         --------------------------------------------------------------------------------
+                    # airpods
+                    elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepmodel'):
+                        print(callback.data)
+                        product_choosen=callback.data.split('_')[1]
+                        await bot.edit_message_text( 'Какие сообщения по товарам получать?',
+                            callback.message.chat.id, callback.message.id,parse_mode="HTML",
+
+                            reply_markup=choosing_keyboard_proccess(callback.message.chat.id,'model',
+                                                                 product_choosen= product_choosen))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                     # выбор товара choosed-item
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepyear'):
-                        product_name=callback.data.split('_')[1]
+                        product_choosen=callback.data.split('_')[1]
                         await bot.edit_message_text(
                             'Какие сообщения по товарам получать?',
                             callback.message.chat.id, callback.message.id,parse_mode="HTML",
-                            reply_markup=choosing_keyboard_proccess(callback.message.chat.id,'year',callback.data,{f'{product_name}':f'✅'}))
+                            reply_markup=choosing_keyboard_proccess(callback.message.chat.id,'memory',callback.data,
+                                                                    product_choosen))
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepmemory'):
-                        # product_name = callback.data.split('_')[1]
-                        # product_year = callback.data.split('_')[2]
-
+                        product_choosen = callback.data.split('_')[1]
+                        product_year = callback.data.split('_')[2]
+                        # print(callback.data)
                         await bot.edit_message_text(
                         # f'Товар: <b>{product_name.capitalize()}</b>✅\n' \
                         # f'Год линейки: {product_year} ✅\n' \
                         # f'Теперь укажите серию, цвет, память ⤵',
                             'Какие сообщения по товарам получать?',
                         callback.message.chat.id, callback.message.id, parse_mode = "HTML",
-                        reply_markup = choosing_keyboard_proccess(callback.message.chat.id, 'memory', callback.data))
+                        reply_markup = choosing_keyboard_proccess(callback.message.chat.id, 'memory',
+                                                                  product_choosen=product_choosen,year=product_year))
+
+
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_add'):
-                        # print(callback.data)
+                        print(callback.data)
+
                         product_name = callback.data.split('_')[1]
-                        product_year = callback.data.split('_')[2]
-                        product_model=callback.data.split('_')[3]
-                        # print(product_name,product_year,product_model)
+                        if product_name=='iphone':
+                            product_year = callback.data.split('_')[2]
+                            product_model=callback.data.split('_')[3]
+                            print(product_name,product_year,product_model)
 
-                        product_spec = callback.data.split('_')[4]
-                        product_color=callback.data.split('_')[5]
-                        product_memory = callback.data.split('_')[6]
+                            product_spec = callback.data.split('_')[4]
+                            product_color=callback.data.split('_')[5]
+                            product_memory = callback.data.split('_')[6]
+
+                            print(product_name,',', product_year, product_model,product_spec,product_color,product_memory)
+                            if product_spec == 'orig':
+
+                                new_choosed_item = {
+                                    f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'
+                                    f'_{product_memory}': [
+                                        product_name, product_model, product_color, product_memory]}
+                                stroke_stat = (' ').join([
+                                    product_name, product_model, product_color, product_memory])
+                            else:
+                                new_choosed_item = {
+                                    f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'
+                                    f'_{product_memory}': [
+                                        product_name, product_model, product_spec, product_color, product_memory]}
+                                stroke_stat = (' ').join([
+                                    product_name, product_model, product_spec, product_color, product_memory])
+
+                            # print(new_choosed_item)
+                            if prem_status(callback.message.chat.id) == True:
+                                get_add_del_choosed_item(callback.message.chat.id, "add", new_choosed_item)
+                                await bot.edit_message_text('Какие сообщения по товарам получать?',
+                                                            callback.message.chat.id,
+                                                            callback.message.id,
+                                                            reply_markup=choosing_keyboard_proccess(
+                                                                callback.message.chat.id,
+                                                                level='memory',
+                                                                product_choosen=product_name, year=product_year))
+
+                            else:
+                                if len(tuple(get_add_del_choosed_item(callback.message.chat.id, "get").keys())) < 1:
+                                    # print('проблема',len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys())))
+                                    get_add_del_choosed_item(callback.message.chat.id, "add", new_choosed_item)
+                                    await bot.edit_message_text('Какие сообщения по товарам получать?',
+                                                                callback.message.chat.id,
+                                                                callback.message.id,
+                                                                reply_markup=choosing_keyboard_proccess(
+                                                                    callback.message.chat.id,
+                                                                    level='memory',
+                                                                    product_choosen=product_name, year=product_year))
+
+                                else:
+                                    # bot.edit_message_text(premium_offer, callback.message.chat.id,
+                                    #                       callback.message.id)
+                                    await bot.send_message(callback.message.chat.id, premium_offer)
 
 
 
 
 
 
-                        if product_spec == 'orig':
 
-                                    new_choosed_item = {f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'
-                                                        f'_{product_memory}':[
-                                        product_name,product_model,product_color,product_memory]}
-                                    stroke_stat = (' ').join([
-                                        product_name,product_model,product_color,product_memory])
-                        else:
-                                    new_choosed_item = {f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'
-                                                        f'_{product_memory}':[
-                                        product_name,product_model,product_spec,product_color,product_memory]}
-                                    stroke_stat=(' ').join([
-                                        product_name,product_model,product_spec,product_color,product_memory])
 
-                        # print(new_choosed_item)
+
+                        elif product_name=='airpods':
+                            product_model = callback.data.split('_')[2]
+                            print(callback.data)
+                            product_spec=callback.data.split("_")[3]
+                            print(product_spec)
+
+
+
+                            if ' ' in product_spec:
+                                product_spec=product_spec.split(" ")
+
+
+                                new_choosed_item = {
+                                        f'{product_name}_{product_model}_{("_").join(product_spec)}': [
+                                    product_name, product_model,*product_spec]}
+
+                            else:
+                                new_choosed_item = {
+                                f'{product_name}_{product_model}_{product_spec}': [
+                                    product_name, product_model, product_spec]}
+                            print(new_choosed_item)
+
+                            if prem_status(callback.message.chat.id) == True:
+                                get_add_del_choosed_item(callback.message.chat.id, "add", new_choosed_item)
+                                await bot.edit_message_text('Какие сообщения по товарам получать?',
+                                                            callback.message.chat.id,
+                                                            callback.message.id,
+                                                            reply_markup=choosing_keyboard_proccess(
+                                                                callback.message.chat.id,
+
+                                                                product_choosen=product_name))
+
+                            else:
+                                if len(tuple(get_add_del_choosed_item(callback.message.chat.id, "get").keys())) < 1:
+                                    # print('проблема',len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys())))
+                                    get_add_del_choosed_item(callback.message.chat.id, "add", new_choosed_item)
+                                    await bot.edit_message_text('Какие сообщения по товарам получать?',
+                                                                callback.message.chat.id,
+                                                                callback.message.id,
+                                                                reply_markup=choosing_keyboard_proccess(
+                                                                    callback.message.chat.id,
+
+                                                                    product_choosen=product_name))
+
+                                else:
+                                    # bot.edit_message_text(premium_offer, callback.message.chat.id,
+                                    #                       callback.message.id)
+                                    await bot.send_message(callback.message.chat.id, premium_offer)
 
                         # addinf_pos(stroke_stat)
 
-
-                        if prem_status(callback.message.chat.id)==True:
-                            get_add_del_choosed_item(callback.message.chat.id,"add",new_choosed_item)
-                            await bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
-                                                  callback.message.id,
-                                                  reply_markup=choosing_keyboard_proccess(callback.message.chat.id,
-                                                                                          level='memory',
-                                                                                          construct=f'construct_{product_name}_{product_year}_stepmemory'))
-
-                        else:
-                            if len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys()))<1:
-                                # print('проблема',len(tuple( get_add_del_choosed_item(callback.message.chat.id,"get").keys())))
-                                get_add_del_choosed_item(callback.message.chat.id, "add", new_choosed_item)
-                                await bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,
-                                                      callback.message.id,
-                                                      reply_markup=choosing_keyboard_proccess(callback.message.chat.id,
-                                                                                              level='memory',
-                                                                                              construct=f'construct_{product_name}_{product_year}_stepmemory'))
-
-                            else:
-                                # bot.edit_message_text(premium_offer, callback.message.chat.id,
-                                #                       callback.message.id)
-                                await bot.send_message(callback.message.chat.id,premium_offer)
+                        # print('здесь')
 
 
                                 # else:
@@ -899,25 +1105,55 @@ async def clientside(bot):
                         #          f'<b>Лимит на добавление ключевых слов превышен❌ </b>\n\n'+Text_of_messages.premium_offer,
                         #                 callback.message.chat.id, callback.message.id, parse_mode="HTML")
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_delete'):
-                        # print(callback.data)
-                        product_name = callback.data.split('_')[1]
-                        product_year = callback.data.split('_')[2]
-                        product_model = callback.data.split('_')[3]
+                        print(callback.data)
+                        if callback.data.split('_')[1]=='iphone':
+                            product_name = callback.data.split('_')[1]
+                            product_year = callback.data.split('_')[2]
+                            product_model = callback.data.split('_')[3]
 
 
-                        product_spec = callback.data.split('_')[4]
-                        product_color = callback.data.split('_')[5]
-                        product_memory = callback.data.split('_')[6]
+                            product_spec = callback.data.split('_')[4]
+                            product_color = callback.data.split('_')[5]
+                            product_memory = callback.data.split('_')[6]
 
-                        # print(product_name, product_year, product_model,product_spec,product_color,pr)
-                        to_del=f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'\
-                                                        f'_{product_memory}'
-                        if to_del in tuple(get_add_del_choosed_item(callback.message.chat.id,"get").keys()):
-                            if get_add_del_choosed_item(callback.message.chat.id,"del",to_del)=='deleted':
-                                await bot.edit_message_text('Какие сообщения по товарам получать?', callback.message.chat.id,  callback.message.id,
-                        reply_markup = choosing_keyboard_proccess(callback.message.chat.id,
-                                                                  level='memory',
-                                                                  construct=f'construct_{product_name}_{product_year}_stepmemory'))
+                            # print(product_name, product_year, product_model,product_spec,product_color,pr)
+                            to_del=f'{product_name}_{product_year}_{product_model}_{product_spec}_{product_color}'\
+                                                            f'_{product_memory}'
+                            if to_del in tuple(get_add_del_choosed_item(callback.message.chat.id,"get").keys()):
+                                if get_add_del_choosed_item(callback.message.chat.id,"del",to_del)=='deleted':
+                                    await bot.edit_message_text('Какие сообщения по товарам получать?',
+                                                                callback.message.chat.id,
+                                                                callback.message.id,
+                                                                reply_markup=choosing_keyboard_proccess(
+                                                                    callback.message.chat.id,
+                                                                    level='memory',
+                                                                    product_choosen=product_name, year=product_year))
+                        elif callback.data.split('_')[1]=='airpods':
+                            product_name = callback.data.split('_')[1]
+
+                            product_model = callback.data.split('_')[2]
+
+                            product_spec = callback.data.split('_')[3]
+                            print(product_name,product_model,product_spec)
+                            if " " in product_spec:
+                                product_spec=product_spec.replace(" ","_")
+                            # print(product_name, product_year, product_model,product_spec,product_color,pr)
+                            to_del = f'{product_name}_{product_model}_{product_spec}'
+
+                            if to_del in tuple(get_add_del_choosed_item(callback.message.chat.id, "get").keys()):
+                                if get_add_del_choosed_item(callback.message.chat.id, "del", to_del) == 'deleted':
+                                    await bot.edit_message_text('Какие сообщения по товарам получать?',
+                                                                callback.message.chat.id,
+                                                                callback.message.id,
+                                                                reply_markup=choosing_keyboard_proccess(
+                                                                    callback.message.chat.id,
+
+                                                                    product_choosen=product_name))
+
+
+                    #
+                    #
+                    # -------------------------------------------------------------------------------------------------
                     # блок рассылки
                     elif callback.data=='reject_new_mail':
                             print(callback.data)
@@ -1056,9 +1292,11 @@ async def clientside(bot):
                         formatted_message = format_products_data(data)
                         await  bot.send_message(callback.message.chat.id, formatted_message,parse_mode='html')
                     elif callback.data == 'autocall_on':
-                        if prem_status(callback.from_user.id)==False:
+                        if prem_status(callback.from_user.id)==False and callback.from_user.id not in all_permissions(\
+                            'get_autosellers'):
                             await  bot.send_message(callback.message.chat.id, premium_offer_autocall, parse_mode='html')
-                        else:
+                        elif callback.from_user.id in all_permissions('get_autosellers') or prem_status(
+                            callback.from_user.id) is True:
                             autocall_status(callback.from_user.id,'change')
                             await bot.edit_message_text(autocall_text,callback.message.chat.id,callback.message.id,
                                                     parse_mode='html',
@@ -1103,6 +1341,8 @@ async def serverside(app):
     # автоответ
 
 
+
+    last_message_len1 = {}
     async  def recall_pricelist(msg):
         # print('дошло')
         tasks=checking_products_bd(msg)
@@ -1137,21 +1377,25 @@ async def serverside(app):
     # проверки на ник в таблице и рассылку почистить от сообщений
     @app.on_message()
     async def forward_to_private_chat(app, message):
-
-        if message.from_user.id==704718950:
+        # print(last_message_len1)
+        # if message.from_user.id in [704718950 ,6724529493]:
         #     print(message)
             if int(message.chat.id) not in chat_ids:
 
                     user_id=message.from_user.id
                     text=str(message.text).lower()
                     resolve=json.loads(str(message.from_user))
-                    global last_message_len
-                    # print(last_message_len)
-                    if last_message_len==len(text):
-                        # print('equal')
-                        pass
-                    else:
 
+                    send=True
+                    if user_id in last_message_len1.keys():
+                       if  last_message_len1[user_id] ==len(text):
+                           send=False
+                       else:
+                            send=True
+                    else:
+                        last_message_len1[user_id]=len(text)
+                        send=True
+                    if send==True:
                         if 'username' in resolve.keys():
                                 if 'bot' not in text :
                                     usrnm = message.from_user.username
@@ -1168,7 +1412,8 @@ async def serverside(app):
                                         task_list.append(send_message_with_interval(app,  random_chat_id,
                                             f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 0.1))
                                         last_message_len=len(text)
-
+                    else:
+                        print(f'сообщ такой же длины {last_message_len1[user_id]} что из другого чата от {user_id}' )
             pass
 
 
@@ -1231,6 +1476,8 @@ async def main():
     global auto_call_process
     global auto_call_bot
     global chat_ids
+
+
     task_list=[]
     auto_call_process=[]
     app = Client("Gorbushkin_resender")

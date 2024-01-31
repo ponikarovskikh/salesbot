@@ -162,19 +162,138 @@ def mail_db(namemail=None,contentmail=None,action=None):
 
 
 # список админов и пользоват
-def all_admins():
+def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,username_remove=None):
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT admins_id FROM adminstable')
-    admins_list = cursor.fetchall()
-    admins=[]
-    for admin in admins_list:
-        for item in admin:
-            admins.append(item)
-    return admins
+    cursor.execute('SELECT admins_id FROM permissions WHERE id=1')
+    admins_list = cursor.fetchone()[0]
+    admins_list = list( json.loads(admins_list))
+    if action=='get_admins' :
+        return admins_list
+    if action=='get_autosellers' :
+        cursor.execute('SELECT autosellers FROM permissions WHERE id=1')
+        autosellers = cursor.fetchone()[0]
+        autosellers = json.loads(autosellers)
+        return autosellers
 
-# print(all_admins())
+    elif action == 'add' and new_admin_id is not None:
+        if '@' in new_admin_id:
+            new_admin_id=new_admin_id.replace("@",'')
+        elif 'https://t.me/' in new_admin_id:
+            new_admin_id = new_admin_id.replace('https://t.me/', '')
+        if new_admin_id in admins_list:
+            return 'added yet'
+        else:
+            admins_list.append(new_admin_id)
+            # Сериализуем список в JSON-строку
+            admins_list_json = json.dumps(admins_list,ensure_ascii=False)
+            # Используем параметризованный запрос для обновления записи
+            cursor.execute('UPDATE permissions SET admins_id = ? WHERE id = 1', (admins_list_json,))
+            conn.commit()
+            cursor.execute('SELECT autosellers FROM permissions WHERE id=1')
+            autosellers = cursor.fetchone()[0]
+            autosellers = json.loads(autosellers)
+            if new_admin_id in autosellers:
+                return 'added yet'
+            else:
+                autosellers.append(new_admin_id)
+            # Сериализуем список в JSON-строку
+            autosellers = json.dumps(autosellers,ensure_ascii=False)
+            # Используем параметризованный запрос для обновления записи
+            cursor.execute('UPDATE permissions SET autosellers = ? WHERE id = 1', (autosellers,))
+            conn.commit()
+            return  'admin added'
+    elif action == 'add' and new_autoseller_id is not None:
+        cursor.execute('SELECT autosellers FROM permissions WHERE id=1')
+        autosellers = cursor.fetchone()[0]
+        autosellers=json.loads(autosellers)
 
+        if '@' in new_autoseller_id:
+            new_autoseller_id=new_autoseller_id.replace("@",'')
+        elif 'https://t.me/' in new_autoseller_id:
+            new_autoseller_id = new_autoseller_id.replace('https://t.me/', '')
+
+        if new_autoseller_id in autosellers:
+            return 'added yet'
+        else:
+            autosellers.append(new_autoseller_id)
+            # Сериализуем список в JSON-строку
+            autosellers = json.dumps(autosellers,ensure_ascii=False)
+            # Используем параметризованный запрос для обновления записи
+            cursor.execute('UPDATE permissions SET autosellers = ? WHERE id = 1', (autosellers,))
+            conn.commit()
+            return 'added seller'
+    elif action=='update' and username_remove is not None:
+        print('1')
+        # print(admins_list)
+        if new_admin_id is not None and new_autoseller_id is None:
+            print('2')
+            print(admins_list)
+            admins_list.append(new_admin_id)
+            print(username_remove)
+            print(admins_list)
+            admins_list.remove(username_remove)
+            print(admins_list)
+
+        # Сериализуем список в JSON-строку
+            admins_list = json.dumps(admins_list,ensure_ascii=False)
+        # Используем параметризованный запрос для обновления записи
+            cursor.execute('UPDATE permissions SET admins_id = ? WHERE id = 1', (admins_list,))
+            conn.commit()
+            # cursor.execute('SELECT autosellers FROM permissions WHERE id=1')
+            # autosellers = cursor.fetchone()[0]
+            # autosellers = json.loads(autosellers)
+            # print(autosellers)
+             #     if username_remove in autosellers:
+            #         print('3')
+            #         autosellers.append(new_admin_id)
+            #         autosellers = list(autosellers).remove(username_remove)
+            #
+            # # Сериализуем список в JSON-строку
+            #         autosellers = json.dumps(autosellers,ensure_ascii=False)
+            # # Используем параметризованный запрос для обновления записи
+            #         cursor.execute('UPDATE permissions SET autosellers = ? WHERE id = 1', (autosellers,))
+            #         conn.commit()
+            return  'admin id changed'
+        elif  new_autoseller_id is not None and new_admin_id is None:
+            cursor.execute('SELECT autosellers FROM permissions WHERE id=1')
+            autosellers = cursor.fetchone()[0]
+            autosellers = json.loads(autosellers)
+            # if username_remove in autosellers:
+            autosellers.remove(username_remove)
+            autosellers.append(new_autoseller_id)
+            autosellers = json.dumps(autosellers,ensure_ascii=False)
+        # Используем параметризованный запрос для обновления записи
+            cursor.execute('UPDATE permissions SET autosellers = ? WHERE id = 1', (autosellers,))
+            conn.commit()
+            return  'autoseller id changed'
+        else:
+            return None
+
+#     замена юзернэйм на id делаю
+
+
+# tut stoim
+
+
+
+
+
+
+
+# print(all_permissions('get_autosellers'))
+# print(all_permissions('get_admins'))
+def refresh_username(user_id,new_username):
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT username FROM users WHERE user_id={user_id}')
+    username = cursor.fetchone()[0]
+    if username == new_username:
+        pass
+        print('не надо')
+    else:
+        cursor.execute('UPDATE users SET username=?  WHERE user_id = ?',(new_username,user_id))
+        conn.commit()
 
 def all_users_list(action=None):
     if action is None:
@@ -189,7 +308,7 @@ def all_users_list(action=None):
         cursor.execute('SELECT user_id FROM users WHERE premium = 1')
         users_premium_list = cursor.fetchall()
         return len(users_list),len(users_play_list),len(users_premium_list)
-    else:
+    elif action=='get':
         conn = sqlite3.connect('bot_db.db')
         cursor = conn.cursor()
         cursor.execute('SELECT user_id FROM users')
@@ -197,7 +316,7 @@ def all_users_list(action=None):
         return [x[0] for x in users_list]
 
 
-
+print(all_users_list())
 # статистика
 
 def reset_column_values():
@@ -603,6 +722,36 @@ def controling_premium(user_id:int,new_premium_status:bool):
 # print( controling_premium(user_id=704718950,new_premium_status=False    ))
 
 # финансовый блок
+def premium_admin_switch(action=None):
+        conn = sqlite3.connect('bot_db.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT premium_control FROM calc WHERE calc_id = 1 ')
+        result = bool( cursor.fetchone()[0])
+        if action is None:
+            return result
+        elif action=='change':
+            print(result)
+            if result is True:
+                result=False
+            else:
+                result=True
+            cursor.execute('UPDATE calc SET premium_control = ? WHERE calc_id =1 ',
+                           (result,))
+            conn.commit()
+            return 'changed',result
+
+
+
+
+# print(premium_admin_switch('change'))
+
+
+
+
+
+
+
+
 
 def setprice(action=None,price=None):
     conn = sqlite3.connect('bot_db.db')
@@ -621,32 +770,138 @@ def setprice(action=None,price=None):
 # обновление дня
 
 
-def daily_profit(user_id=None,bill:int=0,username=None):
+def daily_profit(user_id=None,bill:int=0,username=None,action=None):
+
     conn=sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
-    cursor.execute('UPDATE calc SET sum=sum+? ,quant_sold=quant_sold+1 WHERE calc_id = 1',
-                   (bill,))
+    if action is None:
 
-    conn.commit()
-    date_time = datetime.now().replace(microsecond=0)
+        cursor.execute('UPDATE calc SET sum=sum+? ,quant_sold=quant_sold+1 WHERE calc_id = 1',
+                       (bill,))
 
-# Форматируем объект datetime для получения строки с датой
-    date_str = date_time.strftime("%Y-%m-%d")
+        conn.commit()
+        date_time = datetime.now().replace(microsecond=0)
 
-# Форматируем объект datetime для получения строки со временем
-    time_str = date_time.strftime("%H:%M:%S")
+    # Форматируем объект datetime для получения строки с датой
+        date_str = date_time.strftime("%Y-%m-%d")
 
-    print(date_str, time_str)
-    cursor.execute(
-        'INSERT INTO payments (user_id, username,bill,date,time) VALUES (?,?,?,?,?)',
-        (user_id,username,bill,date_str,time_str))
-    conn.commit()
+    # Форматируем объект datetime для получения строки со временем
+        time_str = date_time.strftime("%H:%M:%S")
 
-print(daily_profit(704718950,100,'Sparjaolives'))
+        print(date_str, time_str)
+        cursor.execute(
+            'INSERT INTO payments (user_id, username,bill,date,time) VALUES (?,?,?,?,?)',
+            (user_id,username,bill,date_str,time_str))
+        conn.commit()
+    # elif action is
+# print(daily_profit(704718950,100,'Sparjaolives'))
 
 #   обнова месяца
 def monthly_profit():
-    pass
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    # query = """
+    # SELECT
+    #     strftime('%Y-%m-%d', date) as date,
+    #     SUM(bill) as total_payment
+    # FROM
+    #     payments
+    # GROUP BY
+    #     date
+    # ORDER BY
+    #     date
+    # """
+    #
+    # # Замените 'datetime_column' и 'payment_amount_column' на имена соответствующих столбцов,
+    # # а 'your_table' — на имя вашей таблицы.
+    #
+    # cursor.execute(query)
+    # results = cursor.fetchall()
+    #
+    # # Вывод результатов
+    # for row in results:
+    #     print(f"Date: {row[0]}, Total Payment: {row[1]}")
+    #
+    # # Закрытие соединения с базой данных
+    # conn.close()
+
+    # SQL-запрос для подсчета суммы оплат за текущий месяц
+    # current_month = datetime.now().month
+    # current_year = datetime.now().year
+    # query = f"""
+    # SELECT
+    #     SUM(bill) as total_payment
+    # FROM
+    #     payments
+    # WHERE
+    #     strftime('%Y', date) = '{current_year}'
+    #     AND strftime('%m', date) = '{current_month:02d}'
+    # """
+    #
+    # # Замените 'datetime_column' и 'payment_amount_column' на имена соответствующих столбцов,
+    # # а 'your_table' — на имя вашей таблицы.
+    #
+    # cursor.execute(query)
+    # total_payment = cursor.fetchone()[0]
+    #
+    # # Вывод результата
+    # print(f"Total payment for {current_year}-{current_month:02d}: {total_payment if total_payment else 0}")
+    #
+    # # Закрытие соединения с базой данных
+    # conn.close()
+    current_date = datetime.now().date()
+    current_date="2024-01-26"
+    # SQL-запрос для подсчета уникальных плательщиков за определенный день
+    # query_day = f"""
+    # SELECT
+    #     COUNT(DISTINCT username) as unique_payers
+    # FROM
+    #     payments
+    # WHERE
+    #     date = '{current_date}'
+    # """
+    #
+    # cursor.execute(query_day)
+    # unique_payers_day = cursor.fetchone()[0]
+    #
+    # print(f"Unique payers count for {current_date}: {unique_payers_day}")
+    #
+    # # Закрытие соединения с базой данных
+    # conn.close()
+print(monthly_profit())
+
+def daily_job():
+    conn = sqlite3.connect('bot_db.db')
+    cursor = conn.cursor()
+    # Получение текущей даты
+    current_date = datetime.now().date()
+
+    # Подсчет уникальных пользователей и общей суммы за день
+    query_day = f"""
+    SELECT 
+        COUNT(DISTINCT username), SUM(bill)
+    FROM 
+        payments
+    WHERE 
+        date = '{current_date}'
+    """
+    cursor.execute(query_day)
+    quant_sold, total_sum = cursor.fetchone()
+    # финашка в прцесссе
+    # Сохранение результатов в таблице calc
+    query_insert = f"""
+    UPDATE calc SET quant_sold +=?, sum_) 
+    VALUES ('{current_date}', {quant_sold}, {sum_today})
+    """
+    cursor.execute(query_insert)
+    conn.commit()
+
+    # Обнуление таблицы payments
+    cursor.execute("DELETE FROM payments")
+    conn.commit()
+
+
+
 # бнова прошлого месяца
 def recent_monthly_profit():
     pass
@@ -835,7 +1090,83 @@ russiandict={
     "синий":"blue",
     "голубой":"blue",
     'розовый':'rose',
-    'pink':'rose'
+
+    "серый":"silver",
+    'аирподс':"airpods"
+
 
 }
 
+priorities={
+    "iphone_prio" : ['1t', '512', '256', '128', '64', 'natural', 'black', 'white', 'blue', 'rose', 'green', 'yellow',
+                 'purple', 'silver', 'gold', 'red', 'coral', '15', '14', 'se', '13', '12', '11', 'xr'],
+"airpods_prio" : ['2', 'pro', '3', 'max', 'type-c', 'lightning', '2', 'lightning', '2022', '2', 'type-c', '2023',
+                  'lightning', 'silver', 'pink', 'black', 'blue', 'green']
+}
+#
+# with open('IPHONE_LIST.json', 'r') as f:
+#     productlist = json.load(f)
+# priorities_model = []
+# priorities_color = []
+# priorities_memories = []
+#
+# years = productlist['iphone']
+# for year in tuple(years.keys()):
+#     models = years[year]
+#     for model in models:
+#         if model not in priorities_model:
+#             priorities_model.append(model)
+#         specs = models[model]
+#         for spec in specs:
+#             colors = specs[spec]
+#             for color in colors:
+#                 if color not in priorities_color:
+#                     priorities_color.append(color)
+#                 memories = colors[color]
+#                 for memory in memories:
+#                     if memory not in priorities_memories:
+#                         priorities_memories.append(memory)
+#
+# # print(priorities_color)
+# # print(priorities_memories)
+#
+# priorities = priorities_memories + priorities_color + priorities_model
+#
+# iphone_prio = repr(priorities)
+#
+# # Имя файла, в который будет сохранен список
+# filename = 'priorities.py'
+#
+# # Открываем файл для записи
+# with open(filename, 'a') as file:
+#     # Записываем строку в файл
+#     file.write(f"iphone_prio = {iphone_prio}\n")
+# priorities_model = []
+# priorities_spec = []
+#
+# with open('IPHONE_LIST.json', 'r') as file:
+#     productlist=json.load(file)
+#     models = productlist['airpods']
+# print(models)
+# # print(models.keys(), 'товары airpods')
+# # print(choosed_items)
+# for model in models.keys():
+#     priorities_model.append(model)
+#     for spec in models[model]:
+#         if ' '  in spec:
+#             spec=spec.split(' ')
+#             priorities_spec+=spec
+#         else:
+#             priorities_spec.append(spec)
+#
+# priorities=priorities_model+priorities_spec
+# print(priorities)
+# airpods_prio = repr(priorities)
+#
+# # Имя файла, в который будет сохранен список
+# filename = 'priorities.py'
+#
+# # Открываем файл для записи
+# with open(filename, 'a') as file:
+#     # Записываем строку в файл
+#     file.write(f"airpods_prio = {airpods_prio}\n")

@@ -606,5 +606,12 @@
         }
       }
     }
+  },
+  "airpods": {
+    "2": ["type-c","lightning"],
+    "pro":["2 lightning 2022","2 type-c 2023"] ,
+    "3": ["lightning"],
+    "max": ["silver","pink","black","blue","green"]
   }
+
 }
