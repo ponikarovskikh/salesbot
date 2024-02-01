@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 # pricelist blck
 
 def create_table_and_insert_data(user_id, data,username=None):
-    table_name = f'price_{user_id}_{username}'
+    table_name = f'price_SEP_{user_id}_SEP_{username}'
     conn = sqlite3.connect('Seller_db.db')
     cursor = conn.cursor()
 
@@ -25,7 +25,7 @@ def get_products_data(user_id,username):
     conn = sqlite3.connect('Seller_db.db')
     cursor = conn.cursor()
 
-    cursor.execute(f"SELECT product, price FROM price_{user_id}_{username}")
+    cursor.execute(f"SELECT product, price FROM price_SEP_{user_id}_SEP_{username}")
     data = cursor.fetchall()
 
     conn.close()
@@ -58,8 +58,8 @@ def checking_products_bd(msg=None,action=None):
         customer = msg.from_user.username  # покупатель
         for table in tables:
             # от каждого продавца
-            # print(table)
-            seller=table.split('_')[2]
+            print(table)
+            seller=table.split('_SEP_')[2]
             conn = sqlite3.connect('Seller_db.db')
             cursor = conn.cursor()
             cursor.execute(f"SELECT product, price FROM {table}")
@@ -319,13 +319,7 @@ def all_users_list(action=None):
 # print(all_users_list())
 # статистика
 
-def reset_column_values():
-        # Функция для обнуления значений в колонке
-        conn = sqlite3.connect('bot_db.db')
-        cursor = conn.cursor()
-        cursor.execute(f"UPDATE stats SET query_count = 0")
-        conn.commit()
-        conn.close()
+
 
 def addinf_pos(product_name=None,text=None,priorities=None,action=None):
     conn = sqlite3.connect('bot_db.db')
@@ -868,37 +862,37 @@ def monthly_profit():
     #
     # # Закрытие соединения с базой данных
     # conn.close()
-print(monthly_profit())
+# print(monthly_profit())
 
-def daily_job():
-    conn = sqlite3.connect('bot_db.db')
-    cursor = conn.cursor()
-    # Получение текущей даты
-    current_date = datetime.now().date()
-
-    # Подсчет уникальных пользователей и общей суммы за день
-    query_day = f"""
-    SELECT 
-        COUNT(DISTINCT username), SUM(bill)
-    FROM 
-        payments
-    WHERE 
-        date = '{current_date}'
-    """
-    cursor.execute(query_day)
-    quant_sold, total_sum = cursor.fetchone()
-    # финашка в прцесссе
-    # Сохранение результатов в таблице calc
-    query_insert = f"""
-    UPDATE calc SET quant_sold +=?, sum_) 
-    VALUES ('{current_date}', {quant_sold}, {sum_today})
-    """
-    cursor.execute(query_insert)
-    conn.commit()
-
-    # Обнуление таблицы payments
-    cursor.execute("DELETE FROM payments")
-    conn.commit()
+# def daily_job():
+#     conn = sqlite3.connect('bot_db.db')
+#     cursor = conn.cursor()
+#     # Получение текущей даты
+#     current_date = datetime.now().date()
+#
+#     # Подсчет уникальных пользователей и общей суммы за день
+#     query_day = f"""
+#     SELECT
+#         COUNT(DISTINCT username), SUM(bill)
+#     FROM
+#         payments
+#     WHERE
+#         date = '{current_date}'
+#     """
+#     cursor.execute(query_day)
+#     quant_sold, total_sum = cursor.fetchone()
+#     # финашка в прцесссе
+#     # Сохранение результатов в таблице calc
+#     query_insert = f"""
+#     UPDATE calc SET quant_sold +=?, sum_)
+#     VALUES ('{current_date}', {quant_sold}, {sum_today})
+#     """
+#     cursor.execute(query_insert)
+#     conn.commit()
+#
+#     # Обнуление таблицы payments
+#     cursor.execute("DELETE FROM payments")
+#     conn.commit()
 
 
 
@@ -1192,4 +1186,4 @@ def stop_function(action=None):
         conn.commit()
         return result
 
-stop_function()
+# stop_function()

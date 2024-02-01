@@ -17,7 +17,8 @@ import time
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
-
+global last_message_len1
+last_message_len1 = {}
 
 async def clientside(bot):
         class SuperStates(STSGR):
@@ -60,13 +61,14 @@ async def clientside(bot):
                     df = pd.read_excel(file_name, usecols='A:B')
                     # print(df, 'df')
                     data = [(row) for index, row in df.iterrows()]
-                    # print(data, 'писок')
+                    print(data, 'писок')
                     create_table_and_insert_data(user_id, data,username)
+                    print('утка')
                     await bot.send_message(chat_id, "Ваш новый прайслист сохранен✅")
                     await bot.send_message(chat_id,autocall_text,parse_mode='html',
                     reply_markup=pricelistmenu( msg.from_user.id))
                 except Exception as e:
-                    await bot.send_message(chat_id, f"Ошибка при обработке файла: {e}")
+                    await bot.send_message(chat_id=-4010327668, text=f"Ошибка при обработке файла: {e}")
 
                 if os.path.exists(file_name):
                     os.remove(file_name)
@@ -347,7 +349,7 @@ async def clientside(bot):
                  else:
                       await bot.edit_message_text('Чтото не так со списком', callback.message.chat.id, callback.message.id)
 
-            банлист
+            # банлист
 
         # логика блока бана
         # @bot.message_handler(commands=['banlist_show'])
@@ -365,7 +367,7 @@ async def clientside(bot):
                          await bot.send_message(msg.chat.id,banlist_preview
                                                      ,reply_markup=banlistmarkup(msg.from_user.id,blocklist))
 
-        # @bot.message_handler(commands=['banlist_clear'])
+        @bot.message_handler(commands=['banlist_clear'])
         async def block_list_clear(msg:Message):
                 if msg.chat.type=='group':
                     pass
@@ -1336,7 +1338,8 @@ async def autocall_with_interval(auto_call_bot, chat_id, text, interval):
 
     except Exception as e:
         task_list.append(autocall_with_interval(auto_call_bot, chat_id, text, interval))
-
+        await app.send_message(chat_id=-4010327668,text=f'autocall_with_interval(auto_call_bot, chat_id, text, "\
+                                                   "interval)\n\n{e}')
 
 
 
@@ -1356,13 +1359,13 @@ async def send_message_with_interval(app, chat_id, text, interval):
         except Exception as e:
             print(e)
             task_list.append(send_message_with_interval(app,chat_id,text,interval))
-
+            await app.send_message(chat_id=-4010327668, text=f"send_message_with_interval(app, chat_id, text, "
+                                                            f"interval)\n\n{e}")
 async def serverside(app):
     # автоответ
 
 
 
-    last_message_len1 = {}
     async  def recall_pricelist(msg):
         # print('дошло')
         tasks=checking_products_bd(msg)
@@ -1398,8 +1401,9 @@ async def serverside(app):
     @app.on_message()
     async def forward_to_private_chat(app, message):
         if stop_function() is True:
-        # print(last_message_len1)
-        # if message.from_user.id in [704718950 ,6724529493]:
+         # print(message.from_user.last_name)
+
+         # if message.from_user.id in [704718950 ,6724529493]:
         #     print(message)
             if int(message.chat.id) not in chat_ids:
 
@@ -1407,35 +1411,45 @@ async def serverside(app):
                     text=str(message.text).lower()
                     resolve=json.loads(str(message.from_user))
 
-                    send=True
-                    if user_id in last_message_len1.keys():
-                       if  last_message_len1[user_id] ==len(text):
-                           send=False
-                       else:
-                            send=True
-                    else:
-                        last_message_len1[user_id]=len(text)
-                        send=True
-                    if send==True:
-                        if 'username' in resolve.keys():
-                                if 'bot' not in text :
+
+
+                    if 'username' in resolve.keys():
+                                if 'bot' not in resolve['username'].lower() :
                                     usrnm = message.from_user.username
                                     if any(keyword in text for keyword in ['куплю', 'предложите', 'ищу','?','купить',
                                                                                    'buy','ищу']):
-                                        await recall_pricelist(message)
-                                        # print('-------------\n',resolve['username'])
-                                        # print(message.text)
-                                        random.shuffle(chat_ids)
 
-                                        # Выбираем случайный элемент из перемешанного списка
-                                        random_chat_id = int(chat_ids[0])
 
-                                        task_list.append(send_message_with_interval(app,  random_chat_id,
-                                            f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 0.1))
-                                        last_message_len=len(text)
-                    else:
-                        print(f'сообщ такой же длины {last_message_len1[user_id]} что из другого чата от {user_id}' )
-            pass
+                                        if user_id in last_message_len1.keys():
+
+                                                if (last_message_len1[user_id]['len'] == len(text) and
+                                                   time.time()-last_message_len1[user_id]['time']<7) :
+                                                    send = False
+                                                    # print(usrnm,'spamiiiiiiiiiiiiiiiiiiinnnnnnng')
+                                                else:
+                                                    send = True
+                                                    last_message_len1[user_id]['len'] = len(text)
+                                                    last_message_len1[user_id]['time'] = int(time.time())
+                                        else:
+                                            last_message_len1[user_id]={}
+                                            last_message_len1[user_id]['len'] = len(text)
+                                            last_message_len1[user_id]['time'] = int(time.time())
+                                            send = True
+                                        if send == True:
+                                            await recall_pricelist(message)
+                                            # print('-------------\n',resolve['username'])
+                                            # print(message.text)
+                                            random.shuffle(chat_ids)
+
+                                            # Выбираем случайный элемент из перемешанного списка
+                                            random_chat_id = int(chat_ids[0])
+
+                                            task_list.append(send_message_with_interval(app,  random_chat_id,
+                                                f'set_@_{user_id}_@_{usrnm}_@_set{message.text}', 0.1))
+
+
+
+
 
 
 
@@ -1450,8 +1464,9 @@ async def serverside(app):
 
 # автокол свкрху прикуртить
 async def checking ():
+    print('ok')
     global wait_seconds
-    wait_seconds=2
+    wait_seconds=1
     first_len=0
 
     while True:
@@ -1469,8 +1484,8 @@ async def checking ():
                             task_list.remove(task)
                             wait_seconds=2
 
-                    except Exception :
-                        print(Exception)
+                    except Exception as e :
+                        await bot.send_message(chat_id=-4010327668, text=f'{task}\n\n{e}')
         autocall_first_len = len(auto_call_process)
 
         await asyncio.sleep(wait_seconds)
@@ -1479,7 +1494,7 @@ async def checking ():
         if (len(auto_call_process) > 5 or autocall_first_len == len(auto_call_process) or len(auto_call_process) - first_len
             < 4):
             for autocall_task in auto_call_process.copy():
-                await asyncio.sleep(wait_seconds)
+                await asyncio.sleep(1)
                 try:
                     await autocall_task
                     auto_call_process.remove(autocall_task)
@@ -1487,6 +1502,15 @@ async def checking ():
 
                 except Exception:
                     pass
+        # print(last_message_len1)
+        keys=tuple(last_message_len1.keys())
+        for user_ids in keys:
+            if time.time()- last_message_len1[user_ids]['time']>5:
+                # print(user_ids,'удален из недавно отправленных')
+                del last_message_len1[user_ids]
+
+
+
 
 
 
@@ -1511,18 +1535,27 @@ async def main():
     scheduler = BackgroundScheduler()
     # обнулятор статистики не трогать
 
+    def reset_column_values():
+        # Функция для обнуления значений в колонке
+        conn = sqlite3.connect('bot_db.db')
+        cursor = conn.cursor()
+        cursor.execute(f"UPDATE stats SET query_count = 0")
+        conn.commit()
+        conn.close()
 
-        # print(f"Значения в колонке  таблицы обнулены.")
 
-    import sqlfile
+
     scheduler.add_job(reset_column_values, 'cron', hour=23, minute=59,
                       )
 
     scheduler.start()
+    await asyncio.gather(asyncio.create_task(checking()),
+                         asyncio.create_task(clientside(bot)), asyncio.create_task(serverside(await app.start()))
+                         )
+    await reset_column_values()
 
 
-    await asyncio.gather (asyncio.create_task(checking()),
-                          asyncio.create_task(clientside(bot)),asyncio.create_task(serverside(await app.start()))  )
+
 
 
     # Запуск бота в бесконечном цикле
