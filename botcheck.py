@@ -458,7 +458,7 @@ async def clientside(bot):
         #     чекать все смс из чатов
         @bot.message_handler(func=lambda msg:Message )
         async def messagecheck(msg):
-            print(msg.from_user.username)
+            # print(msg.from_user.username)
             if stop_function() is True:
                 if msg.chat.type =='private':
                     if msg.from_user.username is None:
@@ -712,37 +712,13 @@ async def clientside(bot):
                             message_correct.remove(item)
                     message_correct=' '.join(message_correct)
 
-                    # with open('IPHONE_LIST.json', 'r') as f:
-                    #     productlist = json.load(f)
-                    # priorities_model = []
-                    # priorities_color = []
-                    # priorities_memories = []
-                    #
-                    # years = productlist['iphone']
-                    # for year in tuple(years.keys()):
-                    #         models = years[year]
-                    #         for model in models:
-                    #             if model not in priorities_model:
-                    #                 priorities_model.append(model)
-                    #             specs = models[model]
-                    #             for spec in specs:
-                    #                 colors = specs[spec]
-                    #                 for color in colors:
-                    #                     if color not in priorities_color:
-                    #                         priorities_color.append(color)
-                    #                     memories = colors[color]
-                    #                     for memory in memories:
-                    #                         if memory not in priorities_memories:
-                    #                             priorities_memories.append(memory)
 
-                    # print(priorities_color)
-                    # print(priorities_memories)
+                    prio = priorities['iphone_prio']
 
-                    # priorities = priorities_memories + priorities_color + priorities_model
                     if 'airpods' in message_correct:
                         prio=priorities['airpods_prio']
-                    elif 'iphone' in message_correct:
-                        prio=priorities['iphone_prio']
+
+
                     addinf_pos(text=message_correct,priorities=prio)
 
 
@@ -807,7 +783,7 @@ async def clientside(bot):
                                 sender_username = msg.from_user.username
                                 sender_id = msg.from_user.id
                             # print()
-                            if 0 not in need_send or (0 in need_send and guarantee>=2):
+                            if 0 not in need_send or (0 in need_send and guarantee>=3):
                                 # if user_id_to!=int(sender_id):
                                     if getchangeplaystatus(user_id_to,action='get')!=0:
 
@@ -1505,7 +1481,7 @@ async def checking ():
         # print(last_message_len1)
         keys=tuple(last_message_len1.keys())
         for user_ids in keys:
-            if time.time()- last_message_len1[user_ids]['time']>5:
+            if time.time()- last_message_len1[user_ids]['time']>7:
                 # print(user_ids,'удален из недавно отправленных')
                 del last_message_len1[user_ids]
 
