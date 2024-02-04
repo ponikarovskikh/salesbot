@@ -78,11 +78,17 @@ async def clientside(bot):
         @bot.message_handler(state=SuperStates.add_new_admin)
         async def add_admin(msg:Message):
             new_admin_user=msg.text
-            if all_permissions(action='add',new_admin_id=new_admin_user)== 'admin added':
-                await bot.send_message(msg.chat.id,f'Админ {new_admin_user} добавлен')
-            elif all_permissions(action='add',new_admin_id=new_admin_user) == 'added yet':
-                await bot.send_message(msg.chat.id, f'Админ {new_admin_user} уже в списке админов')
-            await bot.delete_state(msg.from_user.id, msg.chat.id)
+            if "@" not in new_admin_user:
+                await bot.send_message(msg.chat.id, f'Не получется обработать. \n'
+                                                    f'Введите еще раз,например: '
+                                                    f'@username')
+                await bot.delete_state(msg.from_user.id, msg.chat.id)
+            else:
+                if all_permissions(action='add',new_admin_id=new_admin_user)== 'admin added':
+                    await bot.send_message(msg.chat.id,f'Админ {new_admin_user} добавлен',reply_markup=menu_keyboard_2stage(msg.from_user.id))
+                elif all_permissions(action='add',new_admin_id=new_admin_user) == 'added yet':
+                    await bot.send_message(msg.chat.id, f'Админ {new_admin_user} уже в списке админов',reply_markup=menu_keyboard_2stage(msg.from_user.id))
+                await bot.delete_state(msg.from_user.id, msg.chat.id)
 
         @bot.message_handler(state=SuperStates.add_new_seller)
         async def add_autoseller(msg: Message):
@@ -90,15 +96,18 @@ async def clientside(bot):
             if "@" not in new_seller_user:
                 await bot.send_message(msg.chat.id, f'Не получется обработать. \n'
                                                     f'Введите еще раз,например: '
-                                                    f'@shop_username')
+                                                    f'@username')
+                await bot.delete_state(msg.from_user.id, msg.chat.id)
 
 
-            if all_permissions(action='add', new_autoseller_id=new_seller_user) == 'added seller':
-                await bot.send_message(msg.chat.id, f'Продавец {new_seller_user} добавлен')
-                await bot.delete_state(msg.from_user.id, msg.chat.id)
-            elif all_permissions(action='add', new_autoseller_id=new_seller_user) == 'added yet':
-                await bot.send_message(msg.chat.id, f'Админ {new_seller_user} уже в списке продавцов')
-                await bot.delete_state(msg.from_user.id, msg.chat.id)
+            else:
+                if all_permissions(action='add', new_autoseller_id=new_seller_user) == 'added seller':
+                    await bot.send_message(msg.chat.id, f'Продавец {new_seller_user} добавлен',
+                                           reply_markup=menu_keyboard_2stage(msg.from_user.id))
+                    await bot.delete_state(msg.from_user.id, msg.chat.id)
+                elif all_permissions(action='add', new_autoseller_id=new_seller_user) == 'added yet':
+                    await bot.send_message(msg.chat.id, f'Админ {new_seller_user} уже в списке продавцов',reply_markup=menu_keyboard_2stage(msg.from_user.id))
+                    await bot.delete_state(msg.from_user.id, msg.chat.id)
 
         # @bot.message_handler(commands=['admininfo'])
         async def userslist(msg: Message):
@@ -281,7 +290,7 @@ async def clientside(bot):
                                       'Только <b>одно</b> слово на одной строке!\n'
                                       'Например ->\n\nipad 3 mini\niphone 10s\nairpods 2'
                                       , callback.message.chat.id, callback.message.id,
-                                      parse_mode='HTML')
+                                      parse_mode='HTML',reply_markup=ReplyKeyboardRemove)
                 await bot.send_message(callback.message.chat.id,'И затем жми отправить')
                 # print(callback.from_user.id, callback.message.chat.id)
                 # await bot.register_next_step_handler(callback.message,add_new_keyword)
@@ -505,7 +514,7 @@ async def clientside(bot):
                                     if msg.from_user.id in all_permissions('get_admins'):
                                         await bot.send_message(msg.chat.id, text='Введите [@username](https://usernamе) '
                                                                                  'пользователя '
-                                                                                 'Telegram',parse_mode='Markdown')
+                                                                                 'Telegram',parse_mode='Markdown',reply_markup=ReplyKeyboardRemove)
                                         await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.add_new_admin,
                                                             user_id=msg.chat.id)
 
@@ -514,7 +523,8 @@ async def clientside(bot):
                                     if msg.from_user.id in all_permissions('get_admins'):
                                         await bot.send_message(msg.chat.id, text='Введите [@username](https://usernamе) '
                                                                                  'пользователя '
-                                                                                 'Telegram', parse_mode='Markdown')
+                                                                                 'Telegram', parse_mode='Markdown',
+                                                               reply_markup=ReplyKeyboardRemove)
                                         await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.add_new_seller,
                                                             user_id=msg.chat.id)
 
