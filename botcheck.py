@@ -1403,13 +1403,13 @@ async def serverside(app):
                                 if 'bot' not in resolve['username'].lower() :
                                     usrnm = message.from_user.username
                                     if any(keyword in text for keyword in ['куплю', 'предложите', 'ищу','?','купить',
-                                                                                   'buy','ищу']):
+                                                                                   'buy']):
 
 
                                         if user_id in last_message_len1.keys():
 
                                                 if (last_message_len1[user_id]['len'] == len(text) and
-                                                   time.time()-last_message_len1[user_id]['time']<7) :
+                                                   time.time()-last_message_len1[user_id]['time']<30) :
                                                     send = False
                                                     # print(usrnm,'spamiiiiiiiiiiiiiiiiiiinnnnnnng')
                                                 else:
@@ -1491,7 +1491,7 @@ async def checking ():
         # print(last_message_len1)
         keys=tuple(last_message_len1.keys())
         for user_ids in keys:
-            if time.time()- last_message_len1[user_ids]['time']>7:
+            if time.time()- last_message_len1[user_ids]['time']>30:
                 # print(user_ids,'удален из недавно отправленных')
                 del last_message_len1[user_ids]
 
