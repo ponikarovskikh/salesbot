@@ -612,10 +612,10 @@
     }
   },
   "airpods": {
-    "2": ["type-c","lightning"],
-    "pro":["2 lightning 2022","2 type-c 2023"] ,
+    "2": ["orig type-c","orig lightning"],
+    "pro":["2 lightning","2 type-c"] ,
     "3": ["lightning"],
-    "max": ["silver","pink","black","blue","green"]
+    "max": ["silver","rose","black","blue","green"]
   }
 
 }

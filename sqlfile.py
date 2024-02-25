@@ -3,92 +3,33 @@ import json
 import sqlite3
 from datetime import datetime, timedelta
 
-
+import pandas as pd
+import sqlite3
+import xlsxwriter
 # pricelist blck
 
-def create_table_and_insert_data(user_id, data,username=None):
-    table_name = f'price_SEP_{user_id}_SEP_{username}'
-    conn = sqlite3.connect('Seller_db.db')
-    cursor = conn.cursor()
-
-    # Создание таблицы с колонками 'product' и 'price'
-    cursor.execute(f'CREATE TABLE IF NOT EXISTS {table_name} (product TEXT, price REAL)')
-    cursor.execute(f'DELETE FROM {table_name}')
-    # Вставка данных в таблицу
-    cursor.executemany(f'INSERT INTO {table_name} (product, price) VALUES (?, ?)', data)
-    conn.commit()
-    conn.close()
 
 
 
-def get_products_data(user_id,username):
-    conn = sqlite3.connect('Seller_db.db')
-    cursor = conn.cursor()
-
-    cursor.execute(f"SELECT product, price FROM price_SEP_{user_id}_SEP_{username}")
-    data = cursor.fetchall()
-
-    conn.close()
-    return data
 
 
-# и тут автоответчик
-def checking_products_bd(msg=None,action=None):
-    if action=='get':
-        conn = sqlite3.connect('Seller_db.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = [x[0] for x in cursor.fetchall()]
-        return tables
-    else:
 
-        conn = sqlite3.connect('Seller_db.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = [x[0] for x in cursor.fetchall()]
-        conn = sqlite3.connect('bot_db.db')
-        cursor = conn.cursor()
-        cursor.execute(f'SELECT user_id  FROM users WHERE autocall=1')
 
-        users_autocall = [str(x[0]) for x in cursor.fetchall()]
-        # print(tables,users_autocall)
-        tables = [element for element in tables if any(str(sub) in element for sub in users_autocall)]
-        # print(tables)
-        tasks=[]
-        customer = msg.from_user.username  # покупатель
-        for table in tables:
-            # от каждого продавца
-            print(table)
-            seller=table.split('_SEP_')[2]
-            conn = sqlite3.connect('Seller_db.db')
-            cursor = conn.cursor()
-            cursor.execute(f"SELECT product, price FROM {table}")
-            rows = cursor.fetchall()
-            # print(rows)
-            combo_price=[]
-            for row in rows:
-                product_items=row[0].lower()
-                #
-                # print(product_items)
 
-                if ' ' in  product_items:
-                    product_items= product_items.replace('  ', ' ')
-                    product_items=product_items.split(' ')
 
-                    # print(product_items)
-                else:
-                    product_items=[product_items]
-                    # print(product_items)
-                need_send=[]
-                for item in product_items:
-                    if item in msg.text.lower():
-                        need_send.append(1)
 
-                if len(product_items)==len(need_send):
-                    combo_price.append(row)
-            tasks.append((combo_price,seller,customer))
 
-        return tuple(tasks)
+
+
+
+
+
+
+
+
+
+
+
 
                 # return row
 # print(checking_products_bd())
@@ -175,7 +116,11 @@ def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,usernam
         autosellers = cursor.fetchone()[0]
         autosellers = json.loads(autosellers)
         return autosellers
-
+    if action=='get_user':
+        cursor.execute(f'SELECT username FROM users WHERE user_id=?',(new_autoseller_id,))
+        username = cursor.fetchone()[0]
+        # print(username)
+        return username
     elif action == 'add' and new_admin_id is not None:
         if '@' in new_admin_id or  'https://t.me/' in new_admin_id:
             if '@' in new_admin_id:
@@ -274,7 +219,7 @@ def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,usernam
 
 #     замена юзернэйм на id делаю
 
-
+# print(all_permissions('get_user',new_autoseller_id=704718950))
 # tut stoim
 
 
@@ -292,7 +237,7 @@ def refresh_username(user_id,new_username):
     username = cursor.fetchone()[0]
     if username == new_username:
         pass
-        print('не надо')
+
     else:
         cursor.execute('UPDATE users SET username=?  WHERE user_id = ?',(new_username,user_id))
         conn.commit()
@@ -323,7 +268,8 @@ def all_users_list(action=None):
 
 
 
-def addinf_pos(product_name=None,text=None,priorities=None,action=None):
+def addinf_pos(product_name=None,positions=None,priorities=None,action=None):
+
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
     cursor.execute("SELECT product FROM stats")
@@ -332,24 +278,29 @@ def addinf_pos(product_name=None,text=None,priorities=None,action=None):
     products=cursor.fetchall()
     products=[product[0] for product in products]
     # print(products)
+    # print(positions)
+
     if action !='get':
-        if text!=None and priorities !=None:
-            for product in products:
-                product_LIST=product.split(' ')
-                need_add = []
-                guarantee = 0
-                for item in product_LIST:
-                    if item in text:
-                        need_add.append(1)
-                        if item in priorities:
-                            guarantee+=1
+        print('збс')
+        for product in products:
+            for poskey in positions:
+                need_send=[]
+                for key in product.split(' '):
+                    if key in poskey:
+                        # print(key,'in',poskey)
+                        need_send.append(1)
                     else:
-                        need_add.append(0)
-                if 0 not in need_add or (0 in need_add and guarantee>=2 )  :
-                    # print(product,need_add,guarantee)
+                        need_send.append(0)
+                # print(need_send,'pizdec')
+                if   'iphone' in product or ('iphone' in product  and 0 in need_send):
+                    need_send.remove(0)
+                # print(need_send)
+                if 0 not in need_send :
+                    # print('кроп')
                     cursor.execute("UPDATE stats SET query_count = query_count + 1 WHERE product = ?", (product,))
                     conn.commit()
-        elif text is None and priorities is None:
+                need_send.clear()
+    elif action=='update':
             cursor.execute("UPDATE stats SET query_count = 0 ")
             conn.commit()
     elif action=="get":
@@ -492,7 +443,7 @@ def add_delete_keyword(user_id:int,keyword=None,action:str=None):
     cursor = conn.cursor()
     cursor.execute('SELECT keywords,keywords_limit,premium FROM users WHERE user_id = ?', (user_id,))
     result=cursor.fetchone()
-    # print(result)
+    print(result)
     if action=='add':
         if len(result)>0:
             keywords = json.loads(result[0])
@@ -766,153 +717,11 @@ def setprice(action=None,price=None):
 # обновление дня
 
 
-def daily_profit(user_id=None,bill:int=0,username=None,action=None):
-
-    conn=sqlite3.connect('bot_db.db')
-    cursor = conn.cursor()
-    if action is None:
-
-        cursor.execute('UPDATE calc SET sum=sum+? ,quant_sold=quant_sold+1 WHERE calc_id = 1',
-                       (bill,))
-
-        conn.commit()
-        date_time = datetime.now().replace(microsecond=0)
-
-    # Форматируем объект datetime для получения строки с датой
-        date_str = date_time.strftime("%Y-%m-%d")
-
-    # Форматируем объект datetime для получения строки со временем
-        time_str = date_time.strftime("%H:%M:%S")
-
-        print(date_str, time_str)
-        cursor.execute(
-            'INSERT INTO payments (user_id, username,bill,date,time) VALUES (?,?,?,?,?)',
-            (user_id,username,bill,date_str,time_str))
-        conn.commit()
-    # elif action is
-# print(daily_profit(704718950,100,'Sparjaolives'))
-
-#   обнова месяца
-def monthly_profit():
-    conn = sqlite3.connect('bot_db.db')
-    cursor = conn.cursor()
-    # query = """
-    # SELECT
-    #     strftime('%Y-%m-%d', date) as date,
-    #     SUM(bill) as total_payment
-    # FROM
-    #     payments
-    # GROUP BY
-    #     date
-    # ORDER BY
-    #     date
-    # """
-    #
-    # # Замените 'datetime_column' и 'payment_amount_column' на имена соответствующих столбцов,
-    # # а 'your_table' — на имя вашей таблицы.
-    #
-    # cursor.execute(query)
-    # results = cursor.fetchall()
-    #
-    # # Вывод результатов
-    # for row in results:
-    #     print(f"Date: {row[0]}, Total Payment: {row[1]}")
-    #
-    # # Закрытие соединения с базой данных
-    # conn.close()
-
-    # SQL-запрос для подсчета суммы оплат за текущий месяц
-    # current_month = datetime.now().month
-    # current_year = datetime.now().year
-    # query = f"""
-    # SELECT
-    #     SUM(bill) as total_payment
-    # FROM
-    #     payments
-    # WHERE
-    #     strftime('%Y', date) = '{current_year}'
-    #     AND strftime('%m', date) = '{current_month:02d}'
-    # """
-    #
-    # # Замените 'datetime_column' и 'payment_amount_column' на имена соответствующих столбцов,
-    # # а 'your_table' — на имя вашей таблицы.
-    #
-    # cursor.execute(query)
-    # total_payment = cursor.fetchone()[0]
-    #
-    # # Вывод результата
-    # print(f"Total payment for {current_year}-{current_month:02d}: {total_payment if total_payment else 0}")
-    #
-    # # Закрытие соединения с базой данных
-    # conn.close()
-    current_date = datetime.now().date()
-    current_date="2024-01-26"
-    # SQL-запрос для подсчета уникальных плательщиков за определенный день
-    # query_day = f"""
-    # SELECT
-    #     COUNT(DISTINCT username) as unique_payers
-    # FROM
-    #     payments
-    # WHERE
-    #     date = '{current_date}'
-    # """
-    #
-    # cursor.execute(query_day)
-    # unique_payers_day = cursor.fetchone()[0]
-    #
-    # print(f"Unique payers count for {current_date}: {unique_payers_day}")
-    #
-    # # Закрытие соединения с базой данных
-    # conn.close()
-# print(monthly_profit())
-
-# def daily_job():
-#     conn = sqlite3.connect('bot_db.db')
-#     cursor = conn.cursor()
-#     # Получение текущей даты
-#     current_date = datetime.now().date()
-#
-#     # Подсчет уникальных пользователей и общей суммы за день
-#     query_day = f"""
-#     SELECT
-#         COUNT(DISTINCT username), SUM(bill)
-#     FROM
-#         payments
-#     WHERE
-#         date = '{current_date}'
-#     """
-#     cursor.execute(query_day)
-#     quant_sold, total_sum = cursor.fetchone()
-#     # финашка в прцесссе
-#     # Сохранение результатов в таблице calc
-#     query_insert = f"""
-#     UPDATE calc SET quant_sold +=?, sum_)
-#     VALUES ('{current_date}', {quant_sold}, {sum_today})
-#     """
-#     cursor.execute(query_insert)
-#     conn.commit()
-#
-#     # Обнуление таблицы payments
-#     cursor.execute("DELETE FROM payments")
-#     conn.commit()
 
 
 
-# бнова прошлого месяца
-def recent_monthly_profit():
-    pass
-# обнова года
-def year_profit():
-    pass
-#
 #
 
-def profit_calc():
-    conn = sqlite3.connect('bot_db.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT sum,price,last_month,quant_sold,last_year FROM calc WHERE calc_id = 1 ')
-    result = cursor.fetchone()
-    return result
 
 
 # print(profit_calc())
@@ -1025,10 +834,11 @@ def get_user_and_keywords(user_id,checking=None):
             return result
         else:
             keywords=json.loads(result[0])
-            # print(keywords)
+            # print(user_id)
+            # print('keywords',keywords)
             choosed_items=list(get_add_del_choosed_item(user_id,'get').values())
-            # print(choosed_items)
-            keywords=keywords+choosed_items
+            # print('choosed',choosed_items)
+            keywords={'keywords':keywords,"choosed_items":choosed_items}
             # print(keywords)
             tuple_userid_kwrd=(user_id,keywords)
             # print(tuple_userid_kwrd)
@@ -1043,10 +853,18 @@ def get_user_and_keywords(user_id,checking=None):
 
 
 
-# print(get_user_and_keywords(704718950,True))
+# print(get_user_and_keywords(781156108,True))
 
 
-
+def users_and_keywords_list(access_sending:tuple,users_and_keywords:list):
+                        for user_id in  access_sending:
+                            # print(user_id)
+                            userkwrd=get_user_and_keywords(user_id,checking=True)
+                            # print(userkwrd)
+                            users_and_keywords.append(userkwrd)
+                            # print('сейчас в польз и их словах ==',users_and_keywords)
+                        # print(users_and_keywords)
+                        return tuple(users_and_keywords)
 
 
 # 1111 1111 1111 1026 12 22 000
@@ -1070,102 +888,52 @@ def get_users_without_sendusermsg_in_blocklist(block_id:int):
 
 # print(get_users_without_sendusermsg_in_blocklist('1'))
 #
+def create_excel_file_pricelist():
+    conn = sqlite3.connect('Seller_db.db')
+    # Получаем список таблиц с прайс-листами продавцов
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'price_SEP_%'")
+    tables = cursor.fetchall()
+    excel_writer = pd.ExcelWriter(f'pricelist_{datetime.now().date()}.xlsx')
+    for table in tables:
+        print(table)
+        table_name = table[0]
+        contact=all_permissions(action='get_user',new_autoseller_id=table[0].split('_SEP_')[1])
+        print(contact)
+        print(table_name)
+        df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
 
+        # Записываем данные в Excel-файл
+        df.to_excel(excel_writer, sheet_name=f'{contact}', index=False)
 
-russiandict={
-   "про": "pro",
-    "макс":"max",
-    'мини':'mini',
-    "плюс":"plus",
-    "айфон":"iphone",
-    "натурал":"natural",
-    "белый":"white",
-    "starlight":'white',
-    "черный":"black",
-    "зеленый":"green",
-    "синий":"blue",
-    "голубой":"blue",
-    'розовый':'rose',
+    # Закрываем соединение с базой данных
+    conn.close()
 
-    "серый":"silver",
-    'аирподс':"airpods"
+    # Сохраняем Excel-файл
+    excel_writer.close()
+    return f'pricelist_{datetime.now().date()}.xlsx'
 
-
-}
-
-priorities={
-    "iphone_prio" : ['1t', '512', '256', '128', '64', 'natural', 'black', 'white', 'blue', 'rose', 'green', 'yellow',
-                 'purple', 'silver', 'gold', 'red', 'coral', '15', '14', 'se', '13', '12', '11', 'xr'],
-"airpods_prio" : ['2', 'pro', '3', 'max', 'type-c', 'lightning', '2', 'lightning', '2022', '2', 'type-c', '2023',
-                  'lightning', 'silver', 'pink', 'black', 'blue', 'green']
-}
-#
-# with open('IPHONE_LIST.json', 'r') as f:
-#     productlist = json.load(f)
-# priorities_model = []
-# priorities_color = []
-# priorities_memories = []
-#
-# years = productlist['iphone']
-# for year in tuple(years.keys()):
-#     models = years[year]
-#     for model in models:
-#         if model not in priorities_model:
-#             priorities_model.append(model)
-#         specs = models[model]
-#         for spec in specs:
-#             colors = specs[spec]
-#             for color in colors:
-#                 if color not in priorities_color:
-#                     priorities_color.append(color)
-#                 memories = colors[color]
-#                 for memory in memories:
-#                     if memory not in priorities_memories:
-#                         priorities_memories.append(memory)
-#
-# # print(priorities_color)
-# # print(priorities_memories)
-#
-# priorities = priorities_memories + priorities_color + priorities_model
-#
-# iphone_prio = repr(priorities)
-#
-# # Имя файла, в который будет сохранен список
-# filename = 'priorities.py'
-#
-# # Открываем файл для записи
-# with open(filename, 'a') as file:
-#     # Записываем строку в файл
-#     file.write(f"iphone_prio = {iphone_prio}\n")
-# priorities_model = []
-# priorities_spec = []
-#
-# with open('IPHONE_LIST.json', 'r') as file:
-#     productlist=json.load(file)
-#     models = productlist['airpods']
-# print(models)
-# # print(models.keys(), 'товары airpods')
-# # print(choosed_items)
-# for model in models.keys():
-#     priorities_model.append(model)
-#     for spec in models[model]:
-#         if ' '  in spec:
-#             spec=spec.split(' ')
-#             priorities_spec+=spec
-#         else:
-#             priorities_spec.append(spec)
-#
-# priorities=priorities_model+priorities_spec
-# print(priorities)
-# airpods_prio = repr(priorities)
-#
-# # Имя файла, в который будет сохранен список
-# filename = 'priorities.py'
-#
-# # Открываем файл для записи
-# with open(filename, 'a') as file:
-#     # Записываем строку в файл
-#     file.write(f"airpods_prio = {airpods_prio}\n")
+# create_excel_file_pricelist()
+import russiandict
+russiandict=russiandict.russiandict
+def priorities():
+    import priorities
+    priorities=priorities.priorities
+    # {
+    #     "iphone_prio" :{
+    #         'specs':['pro max','pro','plus','mini','se'],
+    #         'memory':['1t', '512', '256', '128', '64'],
+    #         'color':['natural', 'black', 'white', 'blue', 'rose', 'green', 'yellow',
+    #                  'purple', 'silver', 'gold', 'red', 'coral'],
+    #         'model':[  '15', '14', 'se', '13', '12', '11', 'xr']
+    #     },
+    # "airpods_prio" : {'items':['orig','airpods','2', 'pro', '3', 'max', 'type-c', 'lightning', '2','2022', '2', 'type-c', '2023',
+    #                   'lightning', 'silver', 'pink', 'black', 'blue', 'green'],
+    #                   'specs':['max','pro']},
+    #
+    #     "items":['airpods','macbook','ps','watch','ipad','playstation','samsung']
+    # }
+    return priorities
 
 
 
@@ -1189,3 +957,114 @@ def stop_function(action=None):
         return result
 
 # stop_function()
+
+
+def create_table_and_insert_data(user_id, data, username=None):
+    table_name = f'price_SEP_{user_id}_SEP_{username}'
+    conn = sqlite3.connect('Seller_db.db')
+    cursor = conn.cursor()
+
+    # Создание таблицы с колонками 'product' и 'price'
+    cursor.execute(f'CREATE TABLE IF NOT EXISTS {table_name} (product TEXT, price INTEGER)')
+    cursor.execute(f'DELETE FROM {table_name}')
+
+    #
+    # Вставка данных в таблицу
+    # cursor.executemany(f'INSERT INTO {table_name} (product, price) VALUES (?, ?)', data)
+    conn.commit()
+    conn.close()
+    return 'added'
+
+
+def get_products_data(user_id, username):
+    conn = sqlite3.connect('Seller_db.db')
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT product, price FROM price_SEP_{user_id}")
+    data = cursor.fetchall()
+
+    conn.close()
+    return data
+
+
+# и тут автоответчик
+def checking_products_bd(positions=None, customer=None, action=None):
+    if action == 'get':
+        conn = sqlite3.connect('Seller_db.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [x[0] for x in cursor.fetchall()]
+        return tables
+    elif action == 'create':
+        # print('get')
+        conn = sqlite3.connect('Seller_db.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [x[0] for x in cursor.fetchall()]
+        conn.close()
+        conn = sqlite3.connect('bot_db.db')
+        cursor = conn.cursor()
+        cursor.execute(f'SELECT user_id  FROM users WHERE autocall=1')
+
+        users_autocall = [str(x[0]) for x in cursor.fetchall()]
+        # print(tables, users_autocall, 'uscall')
+        tables = [element for element in tables if any(str(sub) in element for sub in users_autocall)]
+        # print(tables, 'ftables')
+        tasks = []
+        # покупатель
+        for table in tables:
+            # от каждого продавца
+            # print(table)
+            seller = all_permissions('get_user', new_autoseller_id=table.split('_SEP_')[1])
+            conn = sqlite3.connect('Seller_db.db')
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT product, price FROM {table}")
+            rows = cursor.fetchall()
+            # print(rows, table)
+            combo_price = []
+            for row in rows:
+                product_items = row[0].lower()
+                #
+                # print(product_items)
+
+
+                if ' ' in product_items:
+                    product_items = product_items.replace('  ', ' ')
+                    product_items = product_items.split(' ')
+                else:
+                    product_items = [product_items]
+
+
+                # print(seller,product_items)
+
+                for position_key in positions:
+                    priorities_spec = priorities()['iphone_prio']['specs']
+
+                    if 'iphone' in product_items:
+                        print('j0')
+                        if any(word in position_key and word not in product_items  for word in priorities_spec):
+                            continue
+                        elif any(word == 'pro' for word in product_items ) and 'pro max' in position_key:
+                            continue
+                    # print('wtf')
+
+                    need_send=[]
+
+                    for item in product_items:
+
+                        if item in position_key:
+                            need_send.append(1)
+
+                        else:
+                            need_send.append(0)
+                        print(need_send)
+                    if 'iphone' in product_items and 0 in need_send:
+                        need_send.remove(0)
+
+                    if 0 not in need_send  :
+                        combo_price.append(row)
+            tasks.append((combo_price, seller, customer))
+
+        return tuple(tasks)
+
+

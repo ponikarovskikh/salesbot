@@ -31,12 +31,12 @@ def menu_keyboard_1stage():
 
 
 def menu_keyboard_2stage(user_id):
-    print(user_id)
+    # print(user_id)
     keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     func1=types.KeyboardButton('Выбрать товары🕹️')
     func2=types.KeyboardButton('Premium-тариф🔮')
     func3=types.KeyboardButton('Блок-лист❌')
-    func4=types.KeyboardButton('Ключевые слова🔍')
+    func4=types.KeyboardButton('Ключевые слова🔑')
     func5 = types.KeyboardButton("Руководство📚")
     func6 = types.KeyboardButton("Статистика запросов📈")
     keyboard.row(func1, func2)
@@ -55,30 +55,32 @@ def menu_keyboard_2stage(user_id):
 
 
     if user_id in all_permissions('get_admins'):
-        print('yes')
+        # print('yes')
         func9 = types.KeyboardButton('Админ-панель🛠')
         keyboard.add(func9)
     return keyboard
 
 
-def admin_panel():
+def admin_panel(user_id=None):
+    print(user_id)
     keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     func1 = types.KeyboardButton('Изменить цену Premium')
     func2 = types.KeyboardButton('Сводка')
     func3 = types.KeyboardButton('Рассылка')
     func4=types.KeyboardButton('Добавить админа')
     func5=types.KeyboardButton('Добавить продавца')
+    keyboard.row(func1, func2, func3)
+    keyboard.row(func4, func5)
     if premium_admin_switch() is True:
 
         func6 = types.KeyboardButton('Перейти на Бесплатный Premium')
     else:
         func6 = types.KeyboardButton('Включить Платный Premium')
-    func7 = types.KeyboardButton('Назад')
-
-    keyboard.row(func1,func2,func3)
-    keyboard.row(func4,func5)
     keyboard.row(func6)
-    keyboard.row(func7)
+    if user_id==704718950:
+        func7=KeyboardButton('Выгрузить общий прайслист')
+        keyboard.row(func7)
+    keyboard.row( KeyboardButton('Назад'))
     return keyboard
 
 
@@ -169,9 +171,9 @@ def adddelete_keywords(action=None):
         return quick_markup(
             {
 
-                '➕ Добавить ключевые слова': {'callback_data': f'add_keyword'}
+                '➕ Добавить ': {'callback_data': f'add_keyword'}
 
-            }, row_width=1
+            }, row_width=2,
         )
     else:
         return quick_markup(
@@ -365,7 +367,8 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
                     for color in colors.keys():
                         memories=colors[color]
                         # print(memories)
-                        pos_len=len(memories)
+                        kb_mem=[]
+                        memory_spec_len=len(memories)
                         for memory in memories :
 
                             callback_data = (f'construct_{product_choice}_{year_choice}_{model}_{spec}_{color}_'
@@ -403,8 +406,8 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
                             # print('button_text',button_text)
 
                             # print('callback_data', callback_data)
-                            buttonsmenumodel.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
-        markup.add(*buttonsmenumodel,row_width=pos_len)
+                            kb_mem.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
+                        markup.add(*kb_mem,row_width=memory_spec_len)
                             # print(buttons)
     if  product_choosen=='airpods':
         # print('ашкыыы')
@@ -417,11 +420,19 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
             # print(models[model],'xt')
             for spec in models[model]:
                 specbutton=spec
+
+                # if 'orig' in specbutton:
+                #     specbutton=specbutton.replace('orig','')
+
                 if model in kybmark.keys() and specbutton in kybmark.keys():
 
                     button_text = f'{kybmark[model]} {kybmark[specbutton]}'
                 else:
-                    button_text = f'{model} {specbutton}'
+                    if 'orig' in specbutton:
+                        specbutton1 = specbutton.replace('orig', '')
+                        button_text = f'{model} {specbutton1}'
+                    else:
+                        button_text = f'{model} {specbutton}'
                 # if " " in spec:
                 #     print(spec)
                 #     spec = str(spec).replace(' ', '_')
@@ -435,18 +446,22 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
                 # print(spec1, 'spec')
                 for choosed in choosed_items:
                     callback_data1=callback_data.replace(" ","_")
-                    print(choosed,'chosed',callback_data1,'calback')
+                    # print(choosed,'chosed',callback_data1,'calback')
 
 
                     # print(f'{product_choosen}_{model}_{spec}','wtf')
                     if choosed in callback_data1 :
-                        print('yes')
+                        # print('yes')
                         if model in kybmark.keys() and specbutton in kybmark.keys():
 
                             button_text = f'✅{kybmark[model]} {kybmark[specbutton]}'
                         else:
-                            button_text = f'✅{model} {specbutton}'
-
+                            # button_text = f'✅{model} {specbutton}'
+                            if 'orig' in specbutton:
+                                specbutton1 = specbutton.replace('orig', '')
+                                button_text = f'✅{model} {specbutton1}'
+                            else:
+                                button_text = f'✅{model} {specbutton}'
                         callback_data = f'construct_{product_choosen}_{model}_{spec}_delete'
 
                 buttons.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
@@ -568,16 +583,16 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
 
 def pricelistmenu(user_id,action=None):
         markup = types.InlineKeyboardMarkup(row_width=1)
-        tables= checking_products_bd(user_id,'get')
+        tables= checking_products_bd(user_id,action='get')
         print(tables)
         usertable = any(str(user_id) in element for element in tables)
-        print(usertable)
+        # print(usertable)
         if usertable is True:
             b1=InlineKeyboardButton(text='🔽Загрузить новый',callback_data='upload_pricelist')
             b2=InlineKeyboardButton(text='🕒Текущий',callback_data='get_pricelist')
             markup.add(b1,b2,row_width=2)
             if autocall_status(user_id,'get')==True:
-                # ☑️✅✔️➿.
+                # ☑️✅☑️✔️➿🕹🔑🕹
                 b3 = InlineKeyboardButton('✅Автоответчик', callback_data='autocall_off')
             else:
                 b3 = InlineKeyboardButton('❌Автоответчик', callback_data='autocall_on')
@@ -603,9 +618,9 @@ def pricelistmenu(user_id,action=None):
 
 kybmark = {
     "plus": "+",
-    "natural": "🔗",
+    "natural": "⚙",
     "pro max": "PM",
-    "pro": "Pro",
+    "pro": "P",
     "yellow": "🍋",
     "green": "☘️",
     "rose": "🌷",
