@@ -5,7 +5,6 @@ from telebot.asyncio_storage import StateMemoryStorage as STM
 from telebot.async_telebot import AsyncTeleBot
 from telebot.asyncio_handler_backends import  StatesGroup as STSGR,State as ste
 from telebot import types as tp
-
 from Text_of_messages import *
 from config import *
 from keyboards import *
@@ -127,20 +126,77 @@ async def clientside(bot):
 
                 os.remove(file_name)
         # admin_control
+
+        async def adminlist(msg: Message):
+            text = ''
+            admins=[]
+            for index, ids in enumerate(all_permissions(action='get_admins')):
+                if msg.from_user.id == ids:
+                    continue
+                else:
+                    admins.append(1)
+                    try:
+                        text += (f"{index + 1}) @{all_permissions('get_user', new_autoseller_id=ids)}\n")
+                    except Exception:
+                        text += f"{index + 1}) @{ids}\n"
+            if len(admins)>0:
+                await bot.send_message(msg.chat.id, f'<b>Управление админ-доступом👁‍🗨</b>\n\n{text}',
+                                           reply_markup=adminlist_kb(msg.chat.id, 'get'), parse_mode='html')
+            else:
+               if  len(admins)==0:
+                   await bot.send_message(msg.chat.id, f'<b>Управление админ-доступом👁‍🗨</b>\n\n{text}',
+                                          reply_markup=adminlist_kb(msg.chat.id, 'get',admins=admins), parse_mode='html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        async def autosellerslist(msg: Message):
+
+            print(all_permissions(action='get_autosellers'))
+            text = ''
+            for index, ids in enumerate(all_permissions(action='get_autosellers')):
+                # print(ids)
+                # if ids.isdigit():
+                try:
+                    text += (f"{index+1}) @{all_permissions('get_user', new_autoseller_id=ids)}\n")
+                except Exception:
+                    text+=f"{index+1}) @{ids}\n"
+
+            print(text, 'tetxt')
+            await bot.send_message(msg.chat.id, f'<b>Управление продавцами🕹</b>\n\n{text}',reply_markup=admin_autosellers_kb(msg.chat.id,'get'),parse_mode='html')
+            #                                          'пользователя '
+            #                                          'Telegram', parse_mode='Markdown')
+            #
+
         @bot.message_handler(state=SuperStates.add_new_admin)
-        async def add_admin(msg:Message):
-            new_admin_user=msg.text
+        async def add_admin(msg: Message):
+            new_admin_user = msg.text
             if "@" not in new_admin_user:
                 await bot.send_message(msg.chat.id, f'Не получится обработать. \n'
                                                     f'Введите еще раз,например: '
                                                     f'@username')
                 await bot.delete_state(msg.from_user.id, msg.chat.id)
             else:
-                if all_permissions(action='add',new_admin_id=new_admin_user)== 'admin added':
-                    await bot.send_message(msg.chat.id,f'Админ {new_admin_user} добавлен',reply_markup=menu_keyboard_2stage(msg.from_user.id))
-                elif all_permissions(action='add',new_admin_id=new_admin_user) == 'added yet':
-                    await bot.send_message(msg.chat.id, f'Админ {new_admin_user} уже в списке админов',reply_markup=menu_keyboard_2stage(msg.from_user.id))
+                if all_permissions(action='add', new_admin_id=new_admin_user) == 'admin added':
+                    await bot.send_message(msg.chat.id, f'Админ {new_admin_user} добавлен',
+                                           reply_markup=menu_keyboard_2stage(msg.from_user.id))
+                elif all_permissions(action='add', new_admin_id=new_admin_user) == 'added yet':
+                    await bot.send_message(msg.chat.id, f'Админ {new_admin_user} уже в списке админов',
+                                           reply_markup=menu_keyboard_2stage(msg.from_user.id))
                 await bot.delete_state(msg.from_user.id, msg.chat.id)
+            await adminlist(msg)
+
+
         @bot.message_handler(state=SuperStates.add_new_seller)
         async def add_autoseller(msg: Message):
             new_seller_user = msg.text
@@ -148,7 +204,7 @@ async def clientside(bot):
                 await bot.send_message(msg.chat.id, f'Не получается обработать. \n'
                                                     f'Введите еще раз,например: '
                                                     f'@username')
-                await bot.delete_state(msg.from_user.id, msg.chat.id)
+                # await bot.delete_state(msg.from_user.id, msg.chat.id)
 
 
             else:
@@ -157,8 +213,10 @@ async def clientside(bot):
                                            reply_markup=menu_keyboard_2stage(msg.from_user.id))
                     await bot.delete_state(msg.from_user.id, msg.chat.id)
                 elif all_permissions(action='add', new_autoseller_id=new_seller_user) == 'added yet':
-                    await bot.send_message(msg.chat.id, f'Админ {new_seller_user} уже в списке продавцов',reply_markup=menu_keyboard_2stage(msg.from_user.id))
+                    await bot.send_message(msg.chat.id, f'Пользователь {new_seller_user} уже в списке продавцов',reply_markup=menu_keyboard_2stage(msg.from_user.id))
                     await bot.delete_state(msg.from_user.id, msg.chat.id)
+                await autosellerslist(msg)
+        # меню продваццов
         async def userslist(msg: Message):
             admins=all_permissions('get_admins')
             if msg.from_user.id in admins:
@@ -179,9 +237,9 @@ async def clientside(bot):
                                                                              parse_mode='HTML')
         @bot.message_handler(commands=['setprice'])
         async def pricesetinit(msg: Message):
-            admins = all_permissions()
+            admins = all_permissions('get_admins')
             if msg.from_user.id in admins:
-                await bot.send_message(msg.chat.id,f'Укажите новую цену Premium')
+                await bot.send_message(msg.chat.id,f'Укажите новую цену Premium \n\nНе менее 1 доллара в рублевом эквиваленте')
                 await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.getnewprice, user_id=
                 msg.chat.id)
         @bot.message_handler(state=SuperStates.getnewprice)
@@ -190,9 +248,14 @@ async def clientside(bot):
             try:
                 # Try to convert the text to an integer
                 value = int(price)
-                if  setprice('set',value) == 1:
-                    await  bot.send_message(msg.chat.id, f'Новая цена Premium: {price} руб')
-                await bot.delete_state(msg.from_user.id, msg.chat.id)
+                if value>=100:
+
+                    if  setprice('set',value) == 1:
+                        await  bot.send_message(msg.chat.id, f'Новая цена Premium: {price} руб')
+                    await bot.delete_state(msg.from_user.id, msg.chat.id)
+                else:
+                    await bot.send_message(msg.chat.id, f'Что-то не так, введите стоимость еще раз')
+
             except ValueError:
                 await bot.send_message(msg.chat.id, f'Что-то не так, введите стоимость еще раз')
                 await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.getnewprice, user_id=
@@ -287,7 +350,7 @@ async def clientside(bot):
                     print('lo')
                     keywords= get_user_and_keywords(msg.from_user.id)
 
-                    print(keywords,'keywords')
+                    # print(keywords,'keywords')
 
                     if len(keywords)==0:
                        await  bot.send_message(msg.chat.id,'💥🔦 <b>Мои ключевые слова</b>\n\nВ данный момент у тебя нет ключевых '
@@ -419,19 +482,24 @@ async def clientside(bot):
 
                     else:
                         if add_users_field(msg.from_user.id,msg.from_user.username,msg.from_user.id)!='new added':
-                            if out_premium_check(msg.chat.id) in ['skip_prem','skip_notprem']:
+                            if out_premium_check(msg.chat.id) in ['skip_prem']:
                                 # print( out_premium_check(msg.chat.id))
-                                if msg.from_user.username in all_permissions('get_admins'):
+                                if any((not isinstance(item, int)) and (item.lower() == msg.from_user.username.lower())  for item in all_permissions('get_admins')):
+                                    # print('нах')
                                     # print('get_admins')
                                     if all_permissions('update',username_remove=msg.from_user.username,
                                                        new_admin_id=msg.from_user.id)=='admin id changed':
+                                        print('админ ообнова ')
                                         await bot.send_message(msg.chat.id, text='Вам выдана роль Админа🛠',
                                                            reply_markup=menu_keyboard_2stage(msg.from_user.id))
 
-                                if msg.from_user.username in all_permissions('get_autosellers'):
+                                if any((not isinstance(item, int)) and (item.lower() == msg.from_user.username.lower()) for item in
+                                       all_permissions('get_autosellers')):
+                                    # print('супернах')
                                     # print('get_autosellers')
                                     if all_permissions('update',username_remove=msg.from_user.username,
                                                        new_autoseller_id=msg.from_user.id)=='autoseller id changed':
+                                        # print('продавец ообнова ')
                                         await bot.send_message(msg.chat.id, text='Вам выдан доступ к Автопродажам🤖',
                                         reply_markup = menu_keyboard_2stage(msg.from_user.id)  )
                                 refresh_username(msg.from_user.id,msg.from_user.username)
@@ -445,8 +513,6 @@ async def clientside(bot):
                                         await bot.send_document(msg.chat.id,file)
                                         os.remove(pricelist)
 
-
-
                                 elif 'Админ-панель' in msg.text:
                                     if msg.from_user.id in all_permissions('get_admins'):
                                         await bot.send_message(msg.chat.id, text='Админ-панель',
@@ -456,28 +522,15 @@ async def clientside(bot):
                                     await bot.send_message(msg.chat.id, text='Главное меню',
                                                            reply_markup=menu_keyboard_2stage(msg.from_user.id))
 
-
                                 elif 'Добавить админа' in msg.text:
-                                    # print( all_permissions('get_admins'))
                                     if msg.from_user.id in all_permissions('get_admins'):
-                                        await bot.send_message(msg.chat.id, text='Введите [@username](https://usernamе) '
-                                                                                 'пользователя '
-                                                                                 'Telegram',parse_mode='Markdown',reply_markup=tp.ReplyKeyboardRemove())
-                                        await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.add_new_admin,
-                                                            user_id=msg.chat.id)
+                                        await adminlist(msg)
 
 
                                 elif 'Добавить продавца' in msg.text:
                                     if msg.from_user.id in all_permissions('get_admins'):
 
-                                        await bot.send_message(msg.chat.id, text='Введите [@username](https://usernamе) '
-                                                                                 'пользователя '
-                                                                                 'Telegram', parse_mode='Markdown',
-                                                               reply_markup=ReplyKeyboardRemove())
-                                        await bot.set_state(chat_id=msg.from_user.id, state=SuperStates.add_new_seller,
-                                                            user_id=msg.chat.id)
-
-
+                                        await  autosellerslist(msg)
                                 elif 'Перейти на Бесплатный Premium'  in msg.text:
                                     # print(123)
                                     if msg.from_user.id in all_permissions('get_admins'):
@@ -486,17 +539,13 @@ async def clientside(bot):
                                             await bot.send_message(msg.chat.id, text='Оплата за Premium-тариф '
                                                                                      'отключена!\n'
                                                                                      'Действует '
-                                                                                     'бесплатная раздача ',reply_markup=admin_panel())
+                                                                                     'бесплатная раздача ',reply_markup=admin_panel(user_id=msg.from_user.id))
                                 elif 'Включить Платный Premium' in msg.text:
                                     # print(456)
                                     if msg.from_user.id in all_permissions('get_admins'):
                                         if premium_admin_switch('change')[1] is True:
                                             await bot.send_message(msg.chat.id, text='Оплата за Premium-тариф '
-                                                                                     'включена ',reply_markup=admin_panel())
-
-
-
-
+                                                                                     'включена ',reply_markup=admin_panel(user_id=msg.from_user.id))
 
 
                                 elif 'Продавать товар' in msg.text:
@@ -513,42 +562,30 @@ async def clientside(bot):
                                     # bot.send_message(msg.chat.id,'Раздел Блок-лист в разработке')
                                      await block_list_show(msg)
 
-
-
                                 elif 'Выбрать товары'in msg.text:
                                     # print("yes")
                                     # bot.send_message(msg.chat.id,'Раздел Выбрать товары в разработке')
                                     await bot.send_message(msg.chat.id, 'Какие сообщения по товарам получать?',
                                                      reply_markup=choosing_keyboard_proccess(msg.chat.id,level='memory',
                                                                                              product_choosen='iphone'))
-
-
-
-
-
-
-
-
-
                                 elif  'Premium-тариф' in msg.text:
                                     if prem_status(msg.chat.id)==True:
                                         await bot.send_message(msg.chat.id,f'Ваш Premium-тариф активен\n\n '
                                                                      f'Осталось {out_premium_check(msg.chat.id,action=True)} дней ',
                                                          reply_markup=menu_keyboard_2stage(
                                                                      msg.chat.id))
+
                                     else:
                                         if premium_admin_switch() is True:
                                             amount = (int(setprice('get')) * 100)
-                                            await bot.send_invoice(msg.chat.id, 'Premium-тариф', f'Оплатить '
-
-                                                                                                 f'Premium на 30 дней ',
+                                            await bot.send_invoice(msg.chat.id, 'Premium-тариф🔮', f'{premium_promo_offer}\n',
                                                                    f'successful_payment_{msg.from_user.id}',
                                                                    token_yukassa_online_payment_GorbushkinService,
                                                                    'RUB', [LabeledPrice(
                                                     'Купить', amount)])
                                         else:
                                             await bot.send_message(msg.chat.id, premium_promo+'\n❗❗ВНИМАНИЕ❗❗\n'+premium_promo1,parse_mode='HTML',reply_markup=getfreepremium())
-                                            print(setprice('get'),type(setprice('get')))
+                                            # print(setprice('get'),type(setprice('get')))
 
                                 elif 'Руководство' in msg.text:
                                     await bot.send_message(msg.chat.id, support_info, parse_mode='HTML' )
@@ -608,9 +645,6 @@ async def clientside(bot):
                                     for item in message_parts:
                                         await bot.send_message(msg.chat.id, item)
 
-
-
-
                                 elif 'Изменить цену Premium' in msg.text:
                                     await  pricesetinit(msg)
                                 elif 'Сводка' in msg.text:
@@ -624,15 +658,16 @@ async def clientside(bot):
                                                             parse_mode='html',
                                                             reply_markup=pricelistmenu(msg.chat.id))
                                 else:
-                                     await bot.send_message(msg.chat.id,"ты ввел что то не то, выбери что-то из этого списка",reply_markup=menu_keyboard_2stage(msg.chat.id))
+                                     await bot.send_message(msg.chat.id,"Я не понимаю, выбери нужное из списка ниже",reply_markup=menu_keyboard_2stage(msg.chat.id))
 
 
                             else:
+
                                 await bot.send_message(msg.chat.id,'Упс, ваш Premium-период истек.\n\n'
                                                              'Количество ваших ключевых слов и выбранных товаров сократилось до 1.'
                                                              '\n\n'
                                                              'Желаете Продлить ? - кликните на '
-                                                             '<b>Premium-тариф</b>',
+                                                             '<b>Premium-тариф🔮</b>',
                                                  parse_mode='HTML')
                                 await messagecheck(msg=msg)
 
@@ -660,9 +695,11 @@ async def clientside(bot):
                             message_correct=message_correct.replace(item,russiandict[item])
                     positions=message_correct.split('\n')
                     addinf_pos(positions=positions)
+                    # print(message_correct_bef)
+                    # print(message_correct)
 
                     async def recall_pricelist(positions,sender_username):
-                        print('дошло')
+
                         tasks = checking_products_bd(positions=positions,customer=sender_username,action='create')
                         print(tasks)
                         do = None
@@ -688,7 +725,6 @@ async def clientside(bot):
                                 await asyncio.sleep(1)
                             auto_call_process.append(autocall_with_interval(app, customers,
                                                                             price_offer, 1))
-
                     await recall_pricelist(positions,sender_username)
 
                     users_and_keywords=[]
@@ -709,6 +745,7 @@ async def clientside(bot):
                                 # print(f'{types_keywords}',keywords)
                                 if types_keywords=='choosed_items':
                                     if any(word in position_key for word in  priorities()['items']):
+                                        # print('не айфон')
                                         if 'airpods' in position_key:
                                             for key_block in keywords:
                                                 if 'airpods' in key_block:
@@ -748,16 +785,18 @@ async def clientside(bot):
                                                             break
 
                                     else:
+                                        # print('типа айфон')
                                         for key_block in keywords:
                                             # print('позицую: ',position_key,'роверяем на ключ слова ',key_block)
                                             priorities_spec=priorities()['iphone_prio']['specs']
-                                            priorities_color=priorities()['iphone_prio']['color']
+                                            # print(priorities_spec)
+                                            # priorities_color=priorities()['iphone_prio']['color']
 
-                                            if 'orig' in key_block and  any(word == poskey  for word in priorities_spec for poskey in position_key):
-                                                # print('wtf')
+                                            if 'orig' in key_block and  any(word in position_key  for word in priorities_spec ):
+                                                # print('wtf,не те харки')
                                                 continue
                                             elif  any(word == 'pro' for word in key_block)  and 'pro max'  in position_key :
-                                                # print('wtf')
+                                                # print('pro не промакс')
                                                 continue
                                             else:
                                                 need_send = []
@@ -848,6 +887,11 @@ async def clientside(bot):
             if stop_function() is True:
                     # print(callback.data)
                     # логика бана
+
+
+
+
+
                     if callback.data == 'banlist_show':
                             blocklist = add_delete_get_clear_blocked_users(user_id=callback.message.chat.id, action='getall')
                             if len(blocklist) == 0:
@@ -948,6 +992,11 @@ async def clientside(bot):
                                 # print(unblock_id, 'Eсть в списке')
                                     if add_delete_get_clear_blocked_users(unblock_id, unblock_name, callback.message.chat.id, 'delete') == 2:
                                         await bot.edit_message_text(f'🔓 {unblock_name} разблокирован(a) \n✅Теперь вы можете получать от него сообщения', callback.message.chat.id, callback.message.id, reply_markup=block_keyboard(block_id=unblock_id,block_name=unblock_name,banlist=True))
+
+
+
+
+
                     # ключ слово логика
                     elif callback.data=="add_keyword":
                         print(callback.data)
@@ -984,6 +1033,165 @@ async def clientside(bot):
 
 
 
+
+
+
+                    # логика добавления продавцов
+                    elif callback.data == f'autosellers_add':
+                        await bot.edit_message_text('Введите [@username](https://usernamе) '
+                                                                 'пользователя '
+                                                                 'Telegram',callback.from_user.id,message_id=callback.message.id, parse_mode='Markdown'
+                                               )
+                        await bot.set_state(chat_id=callback.from_user.id, state=SuperStates.add_new_seller,
+                                            user_id=callback.from_user.id)
+                    elif callback.data== f'autosellers_delete':
+                        await bot.edit_message_text('Выберите кого удалить',callback.message.chat.id,callback.message.id,reply_markup=admin_autosellers_kb(callback.from_user.id,action='delete'))
+                    elif callback.data.startswith(f'autoseller_') and callback.data.endswith('_delete'):
+                        delete_id=callback.data.split("_")[1]
+                        print('удаляем',delete_id)
+                        try:
+                           delete_id=int(delete_id)
+                           print('похоже')
+                        except Exception:
+                            pass
+
+                        act_result= all_permissions('delete_seller', new_autoseller_id=delete_id)
+                        print(act_result)
+                        if act_result[0] =='delete seller':
+                            if len(act_result[1])==0:
+                                text = ''
+                                for index, ids in enumerate(all_permissions(action='get_autosellers')):
+                                    # print(ids)
+                                    # if ids.isdigit():
+                                    try:
+                                        text += (
+                                            f"{index + 1}) @{all_permissions('get_user', new_autoseller_id=ids)}\n")
+                                    except Exception:
+                                        text += f"{index + 1}) @{ids}\n"
+
+                                # print(text, 'tetxt')
+                                await bot.edit_message_text(f'<b>Управление продавцами🕹</b>\n\n{text}',
+                                                            callback.message.chat.id, callback.message.id,
+                                                            reply_markup=admin_autosellers_kb(callback.message.chat.id,
+                                                                                              'get'), parse_mode='html')
+                            else:
+                                await bot.edit_message_text('Выберите кого удалить', callback.message.chat.id,
+                                                        callback.message.id,
+                                                        reply_markup=admin_autosellers_kb(callback.from_user.id,
+                                                                                          action='delete'))
+                    elif callback.data=='autoseller_menu':
+                        # print(all_permissions(action='get_autosellers'))
+                        text = ''
+                        for index, ids in enumerate(all_permissions(action='get_autosellers')):
+                            # print(ids)
+                            # if ids.isdigit():
+                            try:
+                                text += (f"{index + 1}) @{all_permissions('get_user', new_autoseller_id=ids)}\n")
+                            except Exception:
+                                text += f"{index + 1}) @{ids}\n"
+
+                        # print(text, 'tetxt')
+                        await bot.edit_message_text( f'<b>Управление продавцами🕹</b>\n\n{text}',callback.message.chat.id,callback.message.id,
+                                               reply_markup=admin_autosellers_kb(callback.message.chat.id, 'get'), parse_mode='html')
+
+
+
+                    # логика добаления удаления админов
+                    elif callback.data==f'admins_add':
+                        await bot.send_message(callback.from_user.id, text='Введите [@username](https://usernamе) '
+                                                                 'пользователя '
+                                                                 'Telegram',parse_mode='Markdown',reply_markup=tp.ReplyKeyboardRemove())
+                        await bot.set_state(chat_id=callback.from_user.id,  state=SuperStates.add_new_admin,
+                                            user_id=callback.from_user.id )
+                    elif callback.data== f'admins_delete':
+                        await bot.edit_message_text('Выберите кого удалить из админов',callback.message.chat.id,callback.message.id,reply_markup=adminlist_kb(callback.from_user.id,action='delete'))
+                    elif callback.data==f'admins_menu':
+                        admins = []
+                        text = ''
+                        for index, ids in enumerate(all_permissions(action='get_admins')):
+                            if callback.from_user.id == ids:
+                                continue
+                            else:
+                                admins.append(1)
+                                try:
+                                    text += (f"{index + 1}) @{all_permissions('get_user', new_autoseller_id=ids)}\n")
+                                except Exception:
+                                    text += f"{index + 1}) @{ids}\n"
+                        if len(admins) > 0:
+                            await bot.edit_message_text( f'<b>Управление админ-доступом👁‍🗨</b>\n\n{text}',callback.message.chat.id, callback.message.id,
+                                                   reply_markup=adminlist_kb(callback.chat.id, 'get'), parse_mode='html')
+                        else:
+                            if len(admins) == 0:
+                                await bot.edit_message_text(f'<b>Управление админ-доступом👁‍🗨</b>\n\n{text}',callback.message.chat.id,callback.message.id,
+                                                       reply_markup=adminlist_kb(callback.chat.id, 'get', admins=admins),
+                                                       parse_mode='html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    elif callback.data.startswith(f'admin_') and callback.data.endswith('_delete'):
+                        delete_id=callback.data.split("_")[1]
+                        print('удаляем',delete_id)
+                        try:
+                           delete_id=int(delete_id)
+                           print('похоже')
+                        except Exception:
+                            pass
+
+                        act_result= all_permissions('delete_admin', new_admin_id=delete_id)
+                        print(act_result,'adminsss' )
+                        if act_result[0] =='delete admin':
+                            text = ''
+                            for index, ids in enumerate(all_permissions(action='get_admins')):
+                                if callback.from_user.id == ids:
+                                    continue
+                                else:
+                                    try:
+                                        text += (
+                                            f"{index + 1}) @{all_permissions('get_user', new_autoseller_id=ids)}\n")
+                                    except Exception:
+                                        text += f"{index + 1}) @{ids}\n"
+                            if len(act_result[1])==1:
+                                await bot.edit_message_text(
+                                    f'<b>Управление админ-доступом👁‍🗨</b>\n\n{text}', callback.from_user.id,
+                                    callback.message.id,
+                                    reply_markup=adminlist_kb(callback.from_user.id, 'get'),
+                                    parse_mode='html')
+                            else:
+
+                                await bot.edit_message_text('Выберите кого удалить', callback.from_user.id,
+                                                                callback.message.id,
+                                                                reply_markup=adminlist_kb(callback.from_user.id,
+                                                                                          action='delete'))
+
+
+
+
+
+
+
+
                     #         --------------------------------------------------------------------------------
                     # airpods
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepmodel'):
@@ -994,9 +1202,6 @@ async def clientside(bot):
 
                             reply_markup=choosing_keyboard_proccess(callback.message.chat.id,'model',
                                                                  product_choosen= product_choosen))
-
-
-
                     # выбор товара choosed-item
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepyear'):
                         product_choosen=callback.data.split('_')[1]
@@ -1017,8 +1222,6 @@ async def clientside(bot):
                         callback.message.chat.id, callback.message.id, parse_mode = "HTML",
                         reply_markup = choosing_keyboard_proccess(callback.message.chat.id, 'memory',
                                                                   product_choosen=product_choosen,year=product_year))
-
-
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_add'):
                         print(callback.data)
 
@@ -1066,7 +1269,7 @@ async def clientside(bot):
                                 else:
                                     # bot.edit_message_text(premium_offer, callback.message.chat.id,
                                     #                       callback.message.id)
-                                    await bot.send_message(callback.message.chat.id, premium_offer)
+                                    await bot.send_message(callback.message.chat.id, premium_offer,parse_mode='html')
 
 
 
@@ -1182,10 +1385,24 @@ async def clientside(bot):
                                                                     callback.message.chat.id,
 
                                                                     product_choosen=product_name))
+                    elif callback.data=='clear_choosing_products':
+                            print('clear')
+                            print(callback.message.chat.id)
+                            if  get_add_del_choosed_item(callback.from_user.id, 'clearall')=='cleared':
+
+                                await bot.edit_message_text('Какие сообщения по товарам получать?',callback.from_user.id,callback.message.id,
+                                                        reply_markup=choosing_keyboard_proccess(callback.from_user.id,level='memory',
+                                                                                                product_choosen='iphone'))
 
 
-                    #
-                    #
+
+
+
+
+
+
+
+
                     # -------------------------------------------------------------------------------------------------
                     # блок рассылки
                     elif callback.data=='reject_new_mail':
@@ -1304,6 +1521,10 @@ async def clientside(bot):
                                                             callback.message.chat.id, callback.message.id,
                                                             reply_markup=mail_list_db_kb(action='back'))
                         await bot.delete_state(callback.from_user.id, callback.message.chat.id)
+
+
+
+
                       # блок прайслист
                     elif callback.data=='upload_pricelist':
                         await bot.send_message(callback.message.chat.id,
@@ -1348,53 +1569,50 @@ async def serverside(app):
 
 
 
-
-
-
-
-
-
     # проверки на ник в таблице и рассылку почистить от сообщений
     @app.on_message()
     async def forward_to_private_chat(app, message):
         if stop_function() is True:
          # print(message.from_user.last_name)
-         # if message.from_user.id in [704718950 ,6724529493]:
-         #    print(message)
-            if int(message.chat.id) not in chat_ids:
-                user_id=message.from_user.id
-                text=str(message.text).lower()
-                resolve=json.loads(str(message.from_user))
-                if 'username' in resolve.keys():
-                    if 'bot' not in resolve['username'].lower() :
-                        usrnm = message.from_user.username
-                        if any(keyword in text for keyword in ['куплю','купить', 'предложите', 'ищу','?' ]):
-                            if user_id in last_message_len1.keys():
-                                if (last_message_len1[user_id]['len'] == len(text) and
-                                   time.time()-last_message_len1[user_id]['time']<25) :
-                                    send = False
-                                    print(usrnm,'spam')
+         try:
+             # print('msag', message.from_user.id)
+             # if message.from_user.id in [704718950 ,6724529493]:
+             #    print(message)
+                if int(message.chat.id) not in chat_ids:
+                    user_id=message.from_user.id
+                    text=str(message.text).lower()
+                    resolve=json.loads(str(message.from_user))
+                    if 'username' in resolve.keys():
+                        if 'bot' not in resolve['username'].lower() :
+                            usrnm = message.from_user.username
+                            if any(keyword in text for keyword in ['куплю','купить', 'предложите', 'ищу','?' ]):
+                                if user_id in last_message_len1.keys():
+                                    if (last_message_len1[user_id]['len'] == len(text) and
+                                       time.time()-last_message_len1[user_id]['time']<25) :
+                                        send = False
+                                        print(usrnm,'spam')
+                                    else:
+                                        send = True
+                                        last_message_len1[user_id]['len'] = len(text)
+                                        last_message_len1[user_id]['time'] = int(time.time())
                                 else:
-                                    send = True
+                                    last_message_len1[user_id]={}
                                     last_message_len1[user_id]['len'] = len(text)
                                     last_message_len1[user_id]['time'] = int(time.time())
-                            else:
-                                last_message_len1[user_id]={}
-                                last_message_len1[user_id]['len'] = len(text)
-                                last_message_len1[user_id]['time'] = int(time.time())
-                                send = True
-                            if send == True:
+                                    send = True
+                                if send == True:
 
-                                # print('-------------\n',resolve['username'])
-                                # print(message.text)
-                                random.shuffle(chat_ids)
+                                    # print('-------------\n',resolve['username'])
+                                    # print(message.text)
+                                    random.shuffle(chat_ids)
 
-                                # Выбираем случайный элемент из перемешанного списка
-                                random_chat_id = int(chat_ids[0])
-                                random_chat_id = -1002018161709
-                                await app.send_message (random_chat_id,
-                                    f'set_@_{user_id}_@_{usrnm}_@_set{message.text}')
-
+                                    # Выбираем случайный элемент из перемешанного списка
+                                    random_chat_id = int(chat_ids[0])
+                                    # random_chat_id = -1002018161709
+                                    await app.send_message (random_chat_id,
+                                        f'set_@_{user_id}_@_{usrnm}_@_set{message.text}')
+         except Exception  :
+             pass
 
 
 
@@ -1437,7 +1655,7 @@ async def checking ():
                         # await bot.send_message(chat_id=-4010327668, text=f'{task}\n\n{e}')
         autocall_first_len = len(auto_call_process)
         await asyncio.sleep(wait_seconds)
-        print('автоответчик=', auto_call_process, len(auto_call_process))
+        # print('автоответчик=', auto_call_process, len(auto_call_process))
 
         if (len(auto_call_process) > 5 or autocall_first_len == len(auto_call_process) or len(auto_call_process) - first_len
             < 4):
@@ -1453,7 +1671,7 @@ async def checking ():
         # print(last_message_len1)
         keys=tuple(last_message_len1.keys())
         for user_ids in keys:
-            if time.time()- last_message_len1[user_ids]['time']>30:
+            if time.time()- last_message_len1[user_ids]['time']>10:
                 # print(user_ids,'удален из недавно отправленных')
                 del last_message_len1[user_ids]
 

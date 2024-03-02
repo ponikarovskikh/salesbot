@@ -117,9 +117,12 @@ def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,usernam
         autosellers = json.loads(autosellers)
         return autosellers
     if action=='get_user':
+        # print(new_autoseller_id)
         cursor.execute(f'SELECT username FROM users WHERE user_id=?',(new_autoseller_id,))
+
         username = cursor.fetchone()[0]
-        # print(username)
+        print(username)
+
         return username
     elif action == 'add' and new_admin_id is not None:
         if '@' in new_admin_id or  'https://t.me/' in new_admin_id:
@@ -130,7 +133,7 @@ def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,usernam
             if new_admin_id in admins_list:
                 return 'added yet'
             else:
-                admins_list.append(new_admin_id)
+                admins_list.append(new_admin_id.lower())
                 # Сериализуем список в JSON-строку
                 admins_list_json = json.dumps(admins_list,ensure_ascii=False)
                 # Используем параметризованный запрос для обновления записи
@@ -142,14 +145,14 @@ def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,usernam
                 if new_admin_id in autosellers:
                     return 'added yet'
                 else:
-                    autosellers.append(new_admin_id)
+                    autosellers.append(new_admin_id.lower())
                     # Сериализуем список в JSON-строку
                     autosellers = json.dumps(autosellers,ensure_ascii=False)
                     # Используем параметризованный запрос для обновления записи
                     cursor.execute('UPDATE permissions SET autosellers = ? WHERE id = 1', (autosellers,))
                     conn.commit()
                     return  'admin added'
-        return
+
     elif action == 'add' and new_autoseller_id is not None:
         cursor.execute('SELECT autosellers FROM permissions WHERE id=1')
         autosellers = cursor.fetchone()[0]
@@ -163,7 +166,7 @@ def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,usernam
         if new_autoseller_id in autosellers:
             return 'added yet'
         else:
-            autosellers.append(new_autoseller_id)
+            autosellers.append(new_autoseller_id.lower())
             # Сериализуем список в JSON-строку
             autosellers = json.dumps(autosellers,ensure_ascii=False)
             # Используем параметризованный запрос для обновления записи
@@ -171,17 +174,12 @@ def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,usernam
             conn.commit()
             return 'added seller'
     elif action=='update' and username_remove is not None:
-        print('1')
+        # print('1')
         # print(admins_list)
         if new_admin_id is not None and new_autoseller_id is None:
-            print('2')
-            print(admins_list)
-            admins_list.append(new_admin_id)
-            print(username_remove)
-            print(admins_list)
-            admins_list.remove(username_remove)
-            print(admins_list)
 
+            admins_list.append(new_admin_id.lower())
+            admins_list.remove(username_remove.lower())
         # Сериализуем список в JSON-строку
             admins_list = json.dumps(admins_list,ensure_ascii=False)
         # Используем параметризованный запрос для обновления записи
@@ -207,7 +205,7 @@ def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,usernam
             autosellers = cursor.fetchone()[0]
             autosellers = json.loads(autosellers)
             # if username_remove in autosellers:
-            autosellers.remove(username_remove)
+            autosellers.remove(username_remove.lower())
             autosellers.append(new_autoseller_id)
             autosellers = json.dumps(autosellers,ensure_ascii=False)
         # Используем параметризованный запрос для обновления записи
@@ -216,16 +214,37 @@ def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,usernam
             return  'autoseller id changed'
         else:
             return None
+    elif action=='delete_seller':
+        cursor.execute('SELECT autosellers FROM permissions WHERE id=1')
+        autosellers = cursor.fetchone()[0]
+        print(autosellers,'имба')
+        autosellers = json.loads(autosellers)
+        autosellers.remove(new_autoseller_id)
+        print(autosellers)
+        autosellers1 = json.dumps(autosellers, ensure_ascii=False)
+        # Используем параметризованный запрос для обновления записи
+        cursor.execute('UPDATE permissions SET autosellers = ? WHERE id = 1', (autosellers1,))
+        conn.commit()
+        return 'delete seller', autosellers
+    elif action=='delete_admin':
+        cursor.execute('SELECT admins_id FROM permissions WHERE id=1')
+        admins = cursor.fetchone()[0]
+        print(admins,'имба')
+        admins = json.loads(admins)
+        admins.remove(new_admin_id)
+        print(admins)
+        admins1 = json.dumps(admins, ensure_ascii=False)
+        # Используем параметризованный запрос для обновления записи
+        cursor.execute('UPDATE permissions SET admins_id = ? WHERE id = 1', (admins1,))
+        conn.commit()
+        return 'delete admin', admins
+
+
 
 #     замена юзернэйм на id делаю
 
-# print(all_permissions('get_user',new_autoseller_id=704718950))
+# print(all_permissions('get_user',new_autoseller_id='akietoya'))
 # tut stoim
-
-
-
-
-
 
 
 # print(all_permissions('get_autosellers'))
@@ -308,18 +327,6 @@ def addinf_pos(product_name=None,positions=None,priorities=None,action=None):
         products = cursor.fetchall()
         # print(products)
         return products
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # регистрация
@@ -409,13 +416,6 @@ def add_delete_get_clear_blocked_users(block_id:int=0,block_name:str=None, user_
             return 3
     else:
         return 0
-
-
-
-
-
-
-
 
 # утилита для создания поля
 def createfield():
@@ -511,6 +511,7 @@ def add_delete_keyword(user_id:int,keyword=None,action:str=None):
 def get_add_del_choosed_item(user_id=None,action=None,item=None):
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
+    print(user_id)
     cursor.execute('SELECT choosed_items FROM users WHERE user_id = ?', (user_id,))
     result = cursor.fetchone()
     # print(result)
@@ -565,22 +566,18 @@ def get_add_del_choosed_item(user_id=None,action=None,item=None):
                 cursor.execute('UPDATE users SET choosed_items = ? WHERE user_id = ?', (choosed_items, user_id))
                 conn.commit()
                 return 'cleared'
+    elif action=='clearall':
+        choosed_items = json.loads(result[0])
+        print(choosed_items)
+        choosed_items.clear()
+        choosed_items = json.dumps(choosed_items)
+        print(choosed_items)
 
+        cursor.execute('UPDATE users SET choosed_items = ? WHERE user_id = ?', (choosed_items, user_id))
+        conn.commit()
+        return 'cleared'
 
-
-# print(get_add_del_choosed_item(704718950,'1left',{"iphone_12_pro":["iphone","14","pro"]}))
-
-
-
-
-
-
-
-
-
-
-
-
+print(get_add_del_choosed_item(704718950,'get'))
 
 # функция для просмотра юзером сколько осталось времени действия подписки подписки
 def premium_alive_period(user_id:int,action:str):
@@ -651,6 +648,7 @@ def controling_premium(user_id:int,new_premium_status:bool):
             premium_alive_period(user_id,'set_time')
             return 2
     else:
+        print('зашло')
         if premium is True:
             premium = False
             keywords_limit = 1
@@ -659,11 +657,11 @@ def controling_premium(user_id:int,new_premium_status:bool):
                            (keywords_limit, premium, user_id))
             conn.commit()
             if  premium_alive_period(user_id, 'null_time') =='time has been nulled':
-                # print('yes')
+                print('yes','1 уровень')
                 if get_add_del_choosed_item(user_id,action='1remain') =='cleared':
-                    # print('yes')
+                    print('yes 2 уровень ')
                     if  add_delete_keyword(user_id,0,'1remain')=='1remain':
-                        # print('yes')
+                        print('3 уровень')
                         return 3
 
 # print( controling_premium(user_id=704718950,new_premium_status=False    ))
@@ -692,14 +690,6 @@ def premium_admin_switch(action=None):
 
 # print(premium_admin_switch('change'))
 
-
-
-
-
-
-
-
-
 def setprice(action=None,price=None):
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
@@ -715,37 +705,6 @@ def setprice(action=None,price=None):
 
 
 # обновление дня
-
-
-
-
-
-#
-
-
-
-# print(profit_calc())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # Премиум
 def prem_status(user_id):
@@ -776,22 +735,9 @@ def out_premium_check(user_id,action=None):
                # print('зашел')
                return 'premium_out'
         else:
-            return 'skip_notprem'
-
-
-
-
-
+            return 'skip_prem'
 
 # print(out_premium_check(704718950))
-
-
-
-
-
-
-
-
 
 
 # принимать сообщ вкл/выкл
@@ -814,15 +760,6 @@ def getchangeplaystatus(user_id=None,action=None):
         return 0
 
 # print(getchangeplaystatus(704718950,1))
-
-
-
-
-
-
-
-
-
 def get_user_and_keywords(user_id,checking=None):
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
@@ -851,20 +788,16 @@ def get_user_and_keywords(user_id,checking=None):
             return tuple()
 
 
-
-
 # print(get_user_and_keywords(781156108,True))
-
-
 def users_and_keywords_list(access_sending:tuple,users_and_keywords:list):
-                        for user_id in  access_sending:
-                            # print(user_id)
-                            userkwrd=get_user_and_keywords(user_id,checking=True)
-                            # print(userkwrd)
-                            users_and_keywords.append(userkwrd)
-                            # print('сейчас в польз и их словах ==',users_and_keywords)
-                        # print(users_and_keywords)
-                        return tuple(users_and_keywords)
+    for user_id in  access_sending:
+        # print(user_id)
+        userkwrd=get_user_and_keywords(user_id,checking=True)
+        # print(userkwrd)
+        users_and_keywords.append(userkwrd)
+        # print('сейчас в польз и их словах ==',users_and_keywords)
+    # print(users_and_keywords)
+    return tuple(users_and_keywords)
 
 
 # 1111 1111 1111 1026 12 22 000
@@ -919,6 +852,7 @@ russiandict=russiandict.russiandict
 def priorities():
     import priorities
     priorities=priorities.priorities
+    # print(priorities)
     # {
     #     "iphone_prio" :{
     #         'specs':['pro max','pro','plus','mini','se'],
@@ -957,8 +891,6 @@ def stop_function(action=None):
         return result
 
 # stop_function()
-
-
 def create_table_and_insert_data(user_id, data, username=None):
     table_name = f'price_SEP_{user_id}_SEP_{username}'
     conn = sqlite3.connect('Seller_db.db')
@@ -1066,5 +998,9 @@ def checking_products_bd(positions=None, customer=None, action=None):
             tasks.append((combo_price, seller, customer))
 
         return tuple(tasks)
+
+
+
+
 
 

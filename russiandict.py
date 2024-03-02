@@ -1,4 +1,5 @@
 russiandict={
+    'про макс':'pro max',
     'pink':'rose',
     'пинк':'rose',
     "PM": "pro max",
@@ -26,6 +27,7 @@ russiandict={
     '1 t':'1t',
     'пм':'pro max',
     'вотч':'watch',
+
 
 
 

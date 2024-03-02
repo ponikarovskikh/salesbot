@@ -78,8 +78,7 @@ def admin_panel(user_id=None):
         func6 = types.KeyboardButton('Включить Платный Premium')
     keyboard.row(func6)
     if user_id==704718950:
-        func7=KeyboardButton('Выгрузить общий прайслист')
-        keyboard.row(func7)
+        keyboard.row(KeyboardButton('Выгрузить общий прайслист'))
     keyboard.row( KeyboardButton('Назад'))
     return keyboard
 
@@ -466,43 +465,9 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
 
                 buttons.append(types.InlineKeyboardButton(text=button_text, callback_data=callback_data))
 
-
         markup.add(*buttons,row_width=2)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    if len(get_add_del_choosed_item(user_id, 'get').keys())!=0:
+        markup.add(types.InlineKeyboardButton(text='очистить', callback_data='clear_choosing_products'))
 
     return markup
 
@@ -510,7 +475,63 @@ def choosing_keyboard_proccess(user_id=None ,level=None,construct:str=None,produ
 # choosing_keyboard_proccess()
 
 
+def admin_autosellers_kb(user_id,action=None):
+    if user_id in all_permissions(action='get_admins'):
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        if action=="get":
+            markup.add(InlineKeyboardButton(text='Добавить продавца',callback_data=f'autosellers_add'))
+            markup.add(InlineKeyboardButton(text='Удалить продавца',callback_data=f'autosellers_delete'))
 
+        elif action == "delete":
+            for seller in all_permissions(action='get_autosellers'):
+
+                seller_id = seller
+                try:
+
+                    seller_username = all_permissions('get_user', new_autoseller_id=seller)
+                except Exception :
+                    seller_username=seller
+                print(seller_id,seller_username)
+                markup.add(InlineKeyboardButton(text=seller_username, callback_data=f'autoseller_{seller_id}_delete'))
+            markup.add(InlineKeyboardButton(text='⬅Назад', callback_data=f'autoseller_menu'))
+
+
+
+        return markup
+
+
+
+def adminlist_kb(user_id,action=None,admins=None):
+    if user_id in all_permissions(action='get_admins'):
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        if action=="get":
+            if admins is None:
+                markup.add(InlineKeyboardButton(text='Добавить админа',callback_data=f'admins_add'))
+                markup.add(InlineKeyboardButton(text='Удалить админа',callback_data=f'admins_delete'))
+            else:
+                if len(admins)==0:
+                    markup.add(InlineKeyboardButton(text='Добавить админа', callback_data=f'admins_add'))
+
+
+
+        elif action == "delete":
+            for admin in all_permissions(action='get_admins'):
+                if admin == user_id:
+                    continue
+                else:
+                    admin_id= admin
+                    try:
+
+                        admin_username = all_permissions('get_user', new_autoseller_id=admin_id)
+                    except Exception :
+                        admin_username=admin_id
+                    print(admin_id,admin_username)
+                    markup.add(InlineKeyboardButton(text=admin_username, callback_data=f'admin_{admin_id}_delete'))
+            markup.add(InlineKeyboardButton(text='⬅Назад', callback_data=f'admins_menu'))
+
+
+
+        return markup
 
 
 
