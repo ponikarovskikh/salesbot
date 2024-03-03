@@ -177,28 +177,29 @@ def all_permissions(action=None,new_admin_id=None,new_autoseller_id=None,usernam
         # print('1')
         # print(admins_list)
         if new_admin_id is not None and new_autoseller_id is None:
-
-            admins_list.append(new_admin_id.lower())
+            print(new_admin_id, new_autoseller_id,'xp[')
+            admins_list.append(new_admin_id)
             admins_list.remove(username_remove.lower())
+            print(admins_list)
         # Сериализуем список в JSON-строку
             admins_list = json.dumps(admins_list,ensure_ascii=False)
         # Используем параметризованный запрос для обновления записи
             cursor.execute('UPDATE permissions SET admins_id = ? WHERE id = 1', (admins_list,))
             conn.commit()
-            # cursor.execute('SELECT autosellers FROM permissions WHERE id=1')
-            # autosellers = cursor.fetchone()[0]
-            # autosellers = json.loads(autosellers)
-            # print(autosellers)
-             #     if username_remove in autosellers:
-            #         print('3')
-            #         autosellers.append(new_admin_id)
-            #         autosellers = list(autosellers).remove(username_remove)
-            #
-            # # Сериализуем список в JSON-строку
-            #         autosellers = json.dumps(autosellers,ensure_ascii=False)
-            # # Используем параметризованный запрос для обновления записи
-            #         cursor.execute('UPDATE permissions SET autosellers = ? WHERE id = 1', (autosellers,))
-            #         conn.commit()
+            cursor.execute('SELECT autosellers FROM permissions WHERE id=1')
+            autosellers = cursor.fetchone()[0]
+            autosellers = json.loads(autosellers)
+            print(autosellers)
+            if username_remove in autosellers:
+                    print('3')
+                    autosellers.append(new_admin_id)
+                    autosellers = list(autosellers).remove(username_remove)
+
+            # Сериализуем список в JSON-строку
+            autosellers = json.dumps(autosellers,ensure_ascii=False)
+            # Используем параметризованный запрос для обновления записи
+            cursor.execute('UPDATE permissions SET autosellers = ? WHERE id = 1', (autosellers,))
+            conn.commit()
             return  'admin id changed'
         elif  new_autoseller_id is not None and new_admin_id is None:
             cursor.execute('SELECT autosellers FROM permissions WHERE id=1')

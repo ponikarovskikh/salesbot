@@ -485,7 +485,7 @@ async def clientside(bot):
                             if out_premium_check(msg.chat.id) in ['skip_prem']:
                                 # print( out_premium_check(msg.chat.id))
                                 if any((not isinstance(item, int)) and (item.lower() == msg.from_user.username.lower())  for item in all_permissions('get_admins')):
-                                    # print('нах')
+                                    print('нах')
                                     # print('get_admins')
                                     if all_permissions('update',username_remove=msg.from_user.username,
                                                        new_admin_id=msg.from_user.id)=='admin id changed':
@@ -1119,11 +1119,11 @@ async def clientside(bot):
                                     text += f"{index + 1}) @{ids}\n"
                         if len(admins) > 0:
                             await bot.edit_message_text( f'<b>Управление админ-доступом👁‍🗨</b>\n\n{text}',callback.message.chat.id, callback.message.id,
-                                                   reply_markup=adminlist_kb(callback.chat.id, 'get'), parse_mode='html')
+                                                   reply_markup=adminlist_kb(callback.message.chat.id, 'get'), parse_mode='html')
                         else:
                             if len(admins) == 0:
                                 await bot.edit_message_text(f'<b>Управление админ-доступом👁‍🗨</b>\n\n{text}',callback.message.chat.id,callback.message.id,
-                                                       reply_markup=adminlist_kb(callback.chat.id, 'get', admins=admins),
+                                                       reply_markup=adminlist_kb(callback.message.chat.id, 'get', admins=admins),
                                                        parse_mode='html')
 
 
