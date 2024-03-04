@@ -324,7 +324,11 @@ def addinf_pos(product_name=None,positions=None,priorities=None,action=None):
             cursor.execute("UPDATE stats SET query_count = 0 ")
             conn.commit()
     elif action=="get":
-        cursor.execute("SELECT product,query_count FROM stats")
+
+        # cursor.execute("SELECT product, query_count FROM stats ORDER BY price DESC")
+        # products = cursor.fetchall()
+        # return products
+        cursor.execute("SELECT product,query_count FROM stats ORDER BY query_count DESC")
         products = cursor.fetchall()
         # print(products)
         return products
