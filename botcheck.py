@@ -347,7 +347,7 @@ async def clientside(bot):
                     msg.chat.id))
         async def kwrdupdt(msg:Message):
                 if msg.chat.type=='private':
-                    print('lo')
+                    # print('lo')
                     keywords= get_user_and_keywords(msg.from_user.id)
 
                     # print(keywords,'keywords')
@@ -378,11 +378,11 @@ async def clientside(bot):
         async def add_new_keyword(msg:Message):
                 if '\n' in msg.text:
                     newkeywordslist=msg.text.lower().split('\n')
-                    print(newkeywordslist)
+                    # print(newkeywordslist)
                     newkeyword=[]
                     for keyword in newkeywordslist:
                         newkeyword=keyword.split(' ')
-                        print(keyword)
+                        # print(keyword)
                         if add_delete_keyword(msg.chat.id, newkeyword, 'add') == 'added':
                              await bot.send_message(msg.chat.id, f'Ключевое слово <b>"{(" ").join(newkeyword).capitalize()}"</b>\nдобавлено!',parse_mode='html',reply_markup=menu_keyboard_2stage(msg.chat.id))
 
@@ -485,11 +485,11 @@ async def clientside(bot):
                             if out_premium_check(msg.chat.id) in ['skip_prem']:
                                 # print( out_premium_check(msg.chat.id))
                                 if any((not isinstance(item, int)) and (item.lower() == msg.from_user.username.lower())  for item in all_permissions('get_admins')):
-                                    print('нах')
+                                    # print('нах')
                                     # print('get_admins')
                                     if all_permissions('update',username_remove=msg.from_user.username,
                                                        new_admin_id=msg.from_user.id)=='admin id changed':
-                                        print('админ ообнова ')
+                                        # print('админ ообнова ')
                                         await bot.send_message(msg.chat.id, text='Вам выдана роль Админа🛠',
                                                            reply_markup=menu_keyboard_2stage(msg.from_user.id))
 
@@ -602,48 +602,8 @@ async def clientside(bot):
                                      getchangeplaystatus(msg.chat.id, action=1)
                                      await bot.send_message(msg.chat.id, 'Продажи возобновлены',reply_markup=menu_keyboard_2stage(msg.chat.id))
                                 elif 'Статистика запросов' in msg.text :
-                                    def get_current_date_numeric():
-                                        current_date = datetime.now()
-                                        return current_date.strftime("%d.%m")
-                                    await bot.send_message(msg.chat.id, f'Cтатистика на {get_current_date_numeric()}')
+                                    await bot.send_message(msg.chat.id,'Выберите способ сортировки',reply_markup=statsmarkup())
 
-                                    def format_products_for_message(products):
-                                        message = "Список продуктов:\n"
-                                        for product, count in products:
-                                            # Удаляем 'iphone' из строки продукта
-                                            product_without_iphone = product.replace('iphone ', '')
-                                            message += f"   {product_without_iphone} - {count}\n"
-
-                                        return message
-                                    def split_message_for_telegram(text, max_length=4096):
-                                        # Разделение текста на части по максимальной длине
-                                        parts = []
-                                        while len(text) > 0:
-                                            # Если текст короче максимальной длины, добавляем его целиком
-                                            if len(text) <= max_length:
-                                                parts.append(text)
-                                                break
-                                            else:
-                                                # Находим последний подходящий перенос строки
-                                                split_index = text.rfind('\n', 0, max_length)
-                                                if split_index == -1:
-                                                    # Если перенос строки не найден, разбиваем по максимальной длине
-                                                    split_index = max_length
-
-                                                # Добавляем часть текста в список
-                                                parts.append(text[:split_index])
-                                                # Удаляем добавленную часть из исходного текста
-                                                text = text[split_index:]
-
-                                        return parts
-                                    products=addinf_pos(action='get')
-                                    # Форматирование сообщения
-                                    formatted_message = format_products_for_message(products)
-
-                                    # Разделение сообщения на части
-                                    message_parts = split_message_for_telegram(formatted_message)
-                                    for item in message_parts:
-                                        await bot.send_message(msg.chat.id, item)
 
                                 elif 'Изменить цену Premium' in msg.text:
                                     await  pricesetinit(msg)
@@ -701,7 +661,7 @@ async def clientside(bot):
                     async def recall_pricelist(positions,sender_username):
 
                         tasks = checking_products_bd(positions=positions,customer=sender_username,action='create')
-                        print(tasks)
+                        # print(tasks)
                         do = None
                         for deal in tasks:
                             if len(deal[0]) == 0:
@@ -902,14 +862,14 @@ async def clientside(bot):
                                                   callback.message.chat.id,
                                                     callback.message.id, reply_markup=banlistmarkup(callback.message.chat.id,blocklist))
                     elif str(callback.data).startswith('ban_') and not str(callback.data).endswith("_banlist"):
-                        print(callback.data)
+                        # print(callback.data)
                         clback=callback.data.split('_')
                         # print(clback)
                         block_id = int(clback[1])
                         block_name=clback[2]
                         need_ban=[]
                         blocklist=add_delete_get_clear_blocked_users(block_id, block_name, callback.message.chat.id, 'getall')
-                        print(blocklist)
+                        # print(blocklist)
                         if len(blocklist)==0:
                             if add_delete_get_clear_blocked_users(block_id=block_id,block_name= block_name, user_id= callback.from_user.id,action='add')==1:
                                  await bot.edit_message_text(f'🔒 {block_name} заблокирован(a) 🔒',callback.message.chat.id,callback.message.id,reply_markup=unblock_keyboard(block_id, block_name,None))
@@ -956,8 +916,8 @@ async def clientside(bot):
                                     callback.message.chat.id, callback.message.id,
                                     reply_markup=menu_keyboard_2stage(callback.message.from_user.id))
                     elif str(callback.data).startswith('unban_') and not str(callback.data).endswith("_banlist"):
-                        print('unban 1')
-                        print(callback)
+                        # print('unban 1')
+                        # print(callback)
                         clback = callback.data.split('_')
                         unblock_id = int(clback[1])
                         unblock_name = clback[2]
@@ -999,7 +959,7 @@ async def clientside(bot):
 
                     # ключ слово логика
                     elif callback.data=="add_keyword":
-                        print(callback.data)
+                        # print(callback.data)
                         # await bot.edit_message_text('процесс',callback.message.chat.id,callback.message.id,reply_markup=ReplyKeyboardRemove)
                         await  add_delete_keyword_handler(callback)
                     elif callback.data in 'delete_keywords':
@@ -1032,6 +992,37 @@ async def clientside(bot):
                             await bot.send_message(callback.message.chat.id,'К сожалению, Промоакция уже не актульна😔', parse_mode='HTML')
 
 
+                    elif callback.data==f'statsview_popular':
+                        await bot.send_message(callback.message.chat.id, f'Cтатистика на {get_current_date_numeric()}'
+                                               )
+
+                        products = addinf_pos(action='get',order='popular')
+                        # Форматирование сообщения
+                        formatted_message = format_products_for_message(products)
+
+                        # Разделение сообщения на части
+                        message_parts = split_message_for_telegram(formatted_message)
+                        for item in message_parts:
+                            await bot.send_message(callback.message.chat.id, item)
+
+                    elif callback.data == f'statsview_model':
+
+
+                        await bot.send_message(callback.message.chat.id, f'Cтатистика на {get_current_date_numeric()}'
+                                               )
+
+
+
+
+
+                        products = addinf_pos(action='get')
+                        # Форматирование сообщения
+                        formatted_message = format_products_for_message(products)
+
+                        # Разделение сообщения на части
+                        message_parts = split_message_for_telegram(formatted_message)
+                        for item in message_parts:
+                            await bot.send_message(callback.message.chat.id, item)
 
 
 
@@ -1048,10 +1039,10 @@ async def clientside(bot):
                         await bot.edit_message_text('Выберите кого удалить',callback.message.chat.id,callback.message.id,reply_markup=admin_autosellers_kb(callback.from_user.id,action='delete'))
                     elif callback.data.startswith(f'autoseller_') and callback.data.endswith('_delete'):
                         delete_id=callback.data.split("_")[1]
-                        print('удаляем',delete_id)
+                        # print('удаляем',delete_id)
                         try:
                            delete_id=int(delete_id)
-                           print('похоже')
+                           # print('похоже')
                         except Exception:
                             pass
 
@@ -1152,15 +1143,15 @@ async def clientside(bot):
 
                     elif callback.data.startswith(f'admin_') and callback.data.endswith('_delete'):
                         delete_id=callback.data.split("_")[1]
-                        print('удаляем',delete_id)
+                        # print('удаляем',delete_id)
                         try:
                            delete_id=int(delete_id)
-                           print('похоже')
+                           # print('похоже')
                         except Exception:
                             pass
 
                         act_result= all_permissions('delete_admin', new_admin_id=delete_id)
-                        print(act_result,'adminsss' )
+                        # print(act_result,'adminsss' )
                         if act_result[0] =='delete admin':
                             text = ''
                             for index, ids in enumerate(all_permissions(action='get_admins')):
@@ -1195,7 +1186,7 @@ async def clientside(bot):
                     #         --------------------------------------------------------------------------------
                     # airpods
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_stepmodel'):
-                        print(callback.data)
+                        # print(callback.data)
                         product_choosen=callback.data.split('_')[1]
                         await bot.edit_message_text( 'Какие сообщения по товарам получать?',
                             callback.message.chat.id, callback.message.id,parse_mode="HTML",
@@ -1223,13 +1214,13 @@ async def clientside(bot):
                         reply_markup = choosing_keyboard_proccess(callback.message.chat.id, 'memory',
                                                                   product_choosen=product_choosen,year=product_year))
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_add'):
-                        print(callback.data)
+                        # print(callback.data)
 
                         product_name = callback.data.split('_')[1]
                         if product_name=='iphone':
                             product_year = callback.data.split('_')[2]
                             product_model=callback.data.split('_')[3]
-                            print(product_name,product_year,product_model)
+                            # print(product_name,product_year,product_model)
 
                             product_spec = callback.data.split('_')[4]
                             product_color=callback.data.split('_')[5]
@@ -1299,7 +1290,7 @@ async def clientside(bot):
                                 new_choosed_item = {
                                 f'{product_name}_{product_model}_{product_spec}': [
                                     product_name, product_model, product_spec]}
-                            print(new_choosed_item)
+                            # print(new_choosed_item)
 
                             if prem_status(callback.message.chat.id) == True:
                                 get_add_del_choosed_item(callback.message.chat.id, "add", new_choosed_item)
@@ -1341,7 +1332,7 @@ async def clientside(bot):
                         #          f'<b>Лимит на добавление ключевых слов превышен❌ </b>\n\n'+Text_of_messages.premium_offer,
                         #                 callback.message.chat.id, callback.message.id, parse_mode="HTML")
                     elif str(callback.data).startswith('construct_') and str(callback.data).endswith('_delete'):
-                        print(callback.data)
+                        # print(callback.data)
                         if callback.data.split('_')[1]=='iphone':
                             product_name = callback.data.split('_')[1]
                             product_year = callback.data.split('_')[2]
@@ -1370,7 +1361,7 @@ async def clientside(bot):
                             product_model = callback.data.split('_')[2]
 
                             product_spec = callback.data.split('_')[3]
-                            print(product_name,product_model,product_spec)
+                            # print(product_name,product_model,product_spec)
                             if " " in product_spec:
                                 product_spec=product_spec.replace(" ","_")
                             # print(product_name, product_year, product_model,product_spec,product_color,pr)
@@ -1386,7 +1377,7 @@ async def clientside(bot):
 
                                                                     product_choosen=product_name))
                     elif callback.data=='clear_choosing_products':
-                            print('clear')
+                            # print('clear')
                             print(callback.message.chat.id)
                             if  get_add_del_choosed_item(callback.from_user.id, 'clearall')=='cleared':
 
@@ -1413,22 +1404,22 @@ async def clientside(bot):
                             # await bot.delete_message(callback.message.chat.id,callback.message.id)
                             await bot.delete_state(callback.from_user.id, callback.message.chat.id)
                     elif callback.data == 'change_name_mail':
-                        print(callback.data)
+                        # print(callback.data)
 
                         await bot.edit_message_text('Наберите новое название для рассылки', callback.message.chat.id,
                                                     callback.message.id)
                         await bot.set_state(callback.from_user.id,SuperStates.getnamemail,callback.message.chat.id)
                     elif callback.data=='change_content_mail':
-                        print(callback.data)
+                        # print(callback.data)
 
                         await bot.edit_message_text('Наберите новый текст для рассылки', callback.message.chat.id,
                                                     callback.message.id)
                         await bot.set_state(callback.from_user.id,SuperStates.getсontentmail,callback.message.chat.id)
                     elif callback.data == 'add_list_mail':
-                        print(callback.data)
+                        # print(callback.data)
 
                         async with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
-                            print(data,'clbck')
+                            # print(data,'clbck')
                             if mail_db(data['namemail'],data['contentmail'],action='add') =="added":
 
                                 await bot.edit_message_text( "Рассылка добавлена",callback.message.chat.id,
@@ -1450,11 +1441,11 @@ async def clientside(bot):
                                                     callback.message.chat.id, callback.message.id)
                         await bot.set_state(callback.from_user.id,SuperStates.getnamemail,callback.message.chat.id)
                         async with bot.retrieve_data(callback.from_user.id, callback.message.chat.id) as data:
-                            print('mailingnameprocess', data)
+                            # print('mailingnameprocess', data)
                             data['namemail'] = None
                             data['contentmail']=None
                     elif callback.data.startswith('mail_send_'):
-                        print(callback.data)
+                        # print(callback.data)
                         name = callback.data.split("_")[2]
                         text=mail_db(namemail=name,action='get')
                         mail=f'{text}'
@@ -1464,7 +1455,7 @@ async def clientside(bot):
                             # userslist=[6724529493,704718950]
                             auditory=0
                             for user in userslist:
-                                print(user)
+                                # print(user)
                                 try:
                                     await bot.send_message(user,mail,parse_mode='html')
                                     auditory+=1
@@ -1493,7 +1484,7 @@ async def clientside(bot):
                         await bot.edit_message_text('Выберите действие',callback.message.chat.id,callback.message.id,
                                                     reply_markup=mailmenu())
                     elif callback.data.startswith('mail_open_'):
-                        print(callback.data)
+                        # print(callback.data)
                         name=callback.data.split("_")[2]
                         text=mail_db(namemail=name,action='get')
                         await bot.edit_message_text( f"Рассылка <b>{name.capitalize()}</b>\n\n{text}",
@@ -1501,7 +1492,7 @@ async def clientside(bot):
                                                parse_mode='html',
                                                reply_markup=mailopenmenu(name))
                     elif callback.data.startswith('mail_delete_'):
-                        print(callback.data)
+                        # print(callback.data)
 
                         name = callback.data.split("_")[2]
                         if mail_db(namemail=name,action='delete')=='delete':
@@ -1590,7 +1581,7 @@ async def serverside(app):
                                     if (last_message_len1[user_id]['len'] == len(text) and
                                        time.time()-last_message_len1[user_id]['time']<25) :
                                         send = False
-                                        print(usrnm,'spam')
+                                        # print(usrnm,'spam')
                                     else:
                                         send = True
                                         last_message_len1[user_id]['len'] = len(text)
@@ -1630,7 +1621,7 @@ async def serverside(app):
 
 # автокол свкрху прикуртить
 async def checking ():
-    print('ok')
+    # print('ok')
     global wait_seconds
     wait_seconds=5
     first_len=0

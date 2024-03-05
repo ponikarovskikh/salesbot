@@ -533,6 +533,17 @@ def adminlist_kb(user_id,action=None,admins=None):
 
         return markup
 
+def statsmarkup():
+    return quick_markup(
+        {
+
+            'По популярности': {'callback_data': f'statsview_popular'},
+            'По моделям':{'callback_data': f'statsview_model'}
+
+        }, row_width=1,
+    )
+
+
 
 
 

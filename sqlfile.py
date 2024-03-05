@@ -288,7 +288,7 @@ def all_users_list(action=None):
 
 
 
-def addinf_pos(product_name=None,positions=None,priorities=None,action=None):
+def addinf_pos(product_name=None,positions=None,priorities=None,action=None,order=None):
 
     conn = sqlite3.connect('bot_db.db')
     cursor = conn.cursor()
@@ -324,14 +324,83 @@ def addinf_pos(product_name=None,positions=None,priorities=None,action=None):
             cursor.execute("UPDATE stats SET query_count = 0 ")
             conn.commit()
     elif action=="get":
+        if order is not None:
+            cursor.execute("SELECT product,query_count FROM stats ORDER BY query_count DESC")
+            products = cursor.fetchall()
+            # print(products)
+            return products
+        else:
+            cursor.execute("SELECT product,query_count FROM stats ")
+            products = cursor.fetchall()
+            # print(products)
+            return products
 
-        # cursor.execute("SELECT product, query_count FROM stats ORDER BY price DESC")
-        # products = cursor.fetchall()
-        # return products
-        cursor.execute("SELECT product,query_count FROM stats ORDER BY query_count DESC")
-        products = cursor.fetchall()
-        # print(products)
-        return products
+
+def split_message_for_telegram(text, max_length=4096):
+    # Разделение текста на части по максимальной длине
+    parts = []
+    while len(text) > 0:
+        # Если текст короче максимальной длины, добавляем его целиком
+        if len(text) <= max_length:
+            parts.append(text)
+            break
+        else:
+            # Находим последний подходящий перенос строки
+            split_index = text.rfind('\n', 0, max_length)
+            if split_index == -1:
+                # Если перенос строки не найден, разбиваем по максимальной длине
+                split_index = max_length
+
+            # Добавляем часть текста в список
+            parts.append(text[:split_index])
+            # Удаляем добавленную часть из исходного текста
+            text = text[split_index:]
+
+    return parts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def format_products_for_message(products):
+    message = "Список продуктов:\n"
+    for product, count in products:
+        # Удаляем 'iphone' из строки продукта
+        product_without_iphone = product.replace('iphone ', '')
+        message += f"   {product_without_iphone} - {count}\n"
+
+    return message
+
+
+
+
+
+
+
+def get_current_date_numeric():
+    current_date = datetime.now()
+    return current_date.strftime("%d.%m")
+
+
+
+
+
+
+
+
+
+
+
 
 
 # регистрация
