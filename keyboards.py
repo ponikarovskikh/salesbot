@@ -49,7 +49,7 @@ def menu_keyboard_2stage(user_id):
         func8= types.KeyboardButton('Возобновить продажи▶️')
         keyboard.add(func8)
     if user_id in all_permissions('get_autosellers'):
-        print('yes')
+        # print('yes')
         func7 = types.KeyboardButton('Автопродажи🤖')
         keyboard.add(func7)
 
@@ -62,7 +62,7 @@ def menu_keyboard_2stage(user_id):
 
 
 def admin_panel(user_id=None):
-    print(user_id)
+    # print(user_id)
     keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     func1 = types.KeyboardButton('Изменить цену Premium')
     func2 = types.KeyboardButton('Сводка')
@@ -484,15 +484,17 @@ def admin_autosellers_kb(user_id,action=None):
 
         elif action == "delete":
             for seller in all_permissions(action='get_autosellers'):
+                if seller == user_id:
+                    continue
+                else:
+                    seller_id = seller
+                    try:
 
-                seller_id = seller
-                try:
-
-                    seller_username = all_permissions('get_user', new_autoseller_id=seller)
-                except Exception :
-                    seller_username=seller
-                print(seller_id,seller_username)
-                markup.add(InlineKeyboardButton(text=seller_username, callback_data=f'autoseller_{seller_id}_delete'))
+                        seller_username = all_permissions('get_user', new_autoseller_id=seller)
+                    except Exception :
+                        seller_username=seller
+                    # print(seller_id,seller_username)
+                    markup.add(InlineKeyboardButton(text=seller_username, callback_data=f'autoseller_{seller_id}_delete'))
             markup.add(InlineKeyboardButton(text='⬅Назад', callback_data=f'autoseller_menu'))
 
 
@@ -525,7 +527,7 @@ def adminlist_kb(user_id,action=None,admins=None):
                         admin_username = all_permissions('get_user', new_autoseller_id=admin_id)
                     except Exception :
                         admin_username=admin_id
-                    print(admin_id,admin_username)
+                    # print(admin_id,admin_username)
                     markup.add(InlineKeyboardButton(text=admin_username, callback_data=f'admin_{admin_id}_delete'))
             markup.add(InlineKeyboardButton(text='⬅Назад', callback_data=f'admins_menu'))
 
@@ -540,12 +542,24 @@ def statsmarkup():
             'По популярности': {'callback_data': f'statsview_popular'},
             'По моделям':{'callback_data': f'statsview_model'}
 
-        }, row_width=1,
+        }, row_width=2,
     )
 
 
+def subscribe_channel():
+    inline_markup = InlineKeyboardMarkup()
+    subscribe_button1 = InlineKeyboardButton('Горбушка Оптом чат 💬',
+                                             url='https://t.me/chatoptomgorbushka')  # Укажите ссылку на вашу группу
+    subscribe_button2 = InlineKeyboardButton('Оптом чат Горбушки ‼️‼️',
+                                             url='https://t.me/gorbchat1')  # Укажите ссылку на вашу группу
+    # subscribe_button2 = InlineKeyboardButton('my group',
+    #                                          url='https://t.me/skibiobibidi')  # Укажите ссылку на вашу группу
 
+    # Укажите ссылку на вашу группу
 
+    check_subscription_button = InlineKeyboardButton('Я подписался!', callback_data='check_subscription')
+    inline_markup.add(subscribe_button1, subscribe_button2, check_subscription_button, row_width=1)
+    return inline_markup
 
 
 
@@ -616,7 +630,7 @@ def statsmarkup():
 def pricelistmenu(user_id,action=None):
         markup = types.InlineKeyboardMarkup(row_width=1)
         tables= checking_products_bd(user_id,action='get')
-        print(tables)
+        # print(tables)
         usertable = any(str(user_id) in element for element in tables)
         # print(usertable)
         if usertable is True:
