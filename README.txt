@@ -1,6 +1,6 @@
 Documentation of an Open Source Non-Commercial Telegram Bot for Seller-Buyer Communication
 Introduction
-This document serves as documentation for [Your Bot's Name], an open-source and non-commercial Telegram bot designed to facilitate communication between sellers and buyers. This bot is licensed under the MIT License.
+This document serves as documentation for GORBUSHKINSELLER, an open-source and non-commercial Telegram bot designed to facilitate communication between sellers and buyers. This bot is licensed under the MIT License.
 
 Project Goals
 Unifying work chats into a single communication space.
@@ -15,7 +15,7 @@ PostgreSQL Integration: GORBUSHKINSELLER integrates with PostgreSQL for advanced
 Pandas Integration: The bot leverages the Pandas library for data analysis and manipulation.
 Functionality
 Chat Unification: The bot allows merging multiple chats into a single communication space, simplifying interaction between sellers and buyers.
-Message Filtering: [Your Bot's Name] automatically filters messages and sends them only to sellers offering relevant products according to the catalog and availability.
+Message Filtering: GORBUSHKINSELLER automatically filters messages and sends them only to sellers offering relevant products according to the catalog and availability.
 Product Search: Buyers can use the bot to search for desired products based on the catalog and current availability.
 License
 GORBUSHKINSELLER is distributed under the MIT License, granting users the freedom to use, modify, and distribute the software for any purpose.
