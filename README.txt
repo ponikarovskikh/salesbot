@@ -23,3 +23,16 @@ GORBUSHKINSELLER is distributed under the MIT License, granting users the freedo
 
 Feedback
 We welcome feedback and contributions from the community. If you have any questions, suggestions, or wish to contribute to the project, please contact us via @SparjaOlives.
+
+
+Installation Guideline:
+Add the project to your directory:
+Linux: git clone https://github.com/ponikarovskikh/salesbot.git
+Create a virtual environment in your directory: python -m venv myenv
+Activate it: source myenv/bin/activate
+Install dependencies: pip install requirements.txt
+Add config.py to the project. (KEYS OF BOT getting via BotFatherBot)
+Run the bot using the botcheck.py file.
+
+
+IN the moment, i'm planning and creating new features of bot for future spread integrations to other Moscow's radiomarkets. 
